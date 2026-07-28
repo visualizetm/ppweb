@@ -1,266 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-  <meta name="format-detection" content="telephone=no">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Paps Productions | Automotive Photography Portfolio</title>
-  <meta name="description" content="Cinematic automotive photography portfolio by Paps Productions. Explore immersive galleries, behind-the-scenes, and book your session.">
-  <meta property="og:title" content="Paps Productions | Automotive Photography Portfolio">
-  <meta property="og:description" content="Cinematic automotive photography portfolio by Paps Productions. Explore immersive galleries, behind-the-scenes, and book your session.">
-  <meta property="og:type" content="website">
-  <link rel="icon" type="image/svg+xml" href="Storage/Logo.svg">
-  <link rel="stylesheet" href="Styles/Style.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- @robots -->
 
-  <div id="header-include"></div>
+    <title>Paps Productions — Cinematic Automotive Photography</title>
+    <meta
+      name="description"
+      content="Cinematic automotive photography in Philadelphia and the Main Line. Solo, duo, group and event coverage by Michael Pappas. Book a free consultation."
+    />
 
-  <main id="main-content" tabindex="-1">
-    <section id="hero" class="hero-fullscreen" aria-label="Hero" style="background-image: url('Storage/Photos/IMG1.JPG');">
-      <div class="hero-overlay"></div>
-      <div class="hero-content minimal">
-        <h1 class="hero-title">Paps Productions</h1>
-        <p class="hero-subtitle">
-          <i data-lucide="camera" class="camera-icon" aria-hidden="true"></i>
-          Cinematic Automotive Photography
-        </p>
-      </div>
-    </section>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0B0C0E" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)" />
 
-    <section id="portfolio" class="gallery-section" aria-label="Portfolio">
-      <h2 class="section-title">Portfolio</h2>
-      <div class="gallery-grid">
-        <figure class="gallery-item">
-          <a href="https://mpappasproductions.myportfolio.com/solo-shoot-101125" target="_blank" rel="noopener" aria-label="View Solo Shoot portfolio">
-            <img src="Storage/Photos/IMG7.JPG" alt="BMW M3 rolling shot" loading="lazy" />
-            <figcaption class="gallery-caption">10/11/25 | Solo Shoot</figcaption>
-          </a>
-        </figure>
-        <figure class="gallery-item">
-          <a href="https://mpappasproductions.myportfolio.com/duo-shoot-10825" target="_blank" rel="noopener" aria-label="View Duo Shoot portfolio">
-            <img src="Storage/Photos/IMG8.JPG" alt="Porsche 911 sunset" loading="lazy" />
-            <figcaption class="gallery-caption">10/8/25 | Duo Shoot</figcaption>
-          </a>
-        </figure>
-        <figure class="gallery-item">
-          <a href="https://mpappasproductions.myportfolio.com/rain-solo-shoot-91825" target="_blank" rel="noopener" aria-label="View Rain Solo Shoot portfolio">
-            <img src="Storage/Photos/IMG9.JPG" alt="Audi R8 city night" loading="lazy" />
-            <figcaption class="gallery-caption">10/18/25 | Rain Solo</figcaption>
-          </a>
-        </figure>
-      </div>
-    </section>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Paps Productions" />
+    <meta property="og:title" content="Paps Productions — Cinematic Automotive Photography" />
+    <meta
+      property="og:description"
+      content="Cinematic automotive photography in Philadelphia and the Main Line. Book a free consultation."
+    />
+    <meta property="og:image" content="/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
 
-    <section id="bts" class="bts-section" aria-label="Behind the Lens">
-      <h2 class="section-title">Behind the Lens</h2>
-      <div class="bts-grid">
-        <figure class="bts-item">
-          <img src="Storage/Photos/IMG10.jpeg" alt="Photographer in action" loading="lazy" />
-          <figcaption class="bts-caption">On Location</figcaption>
-        </figure>
-        <figure class="bts-item">
-          <img src="Storage/Photos/IMG11.jpeg" alt="Camera gear closeup" loading="lazy" />
-          <figcaption class="bts-caption">Gear & Setup</figcaption>
-        </figure>
-      </div>
-    </section>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-    <section id="booking" class="booking-section" aria-label="Bookings">
-      <div class="booking-content">
-        <h2 class="section-title">Book Your Shoot</h2>
-        <p class="booking-text">Ready to capture your car in cinematic style? Book your session now.</p>
-        <button type="button" onclick="openComingSoonPopup()" class="btn booking-btn" aria-label="Book Your Session">
-          <i data-lucide="calendar" class="btn-icon" aria-hidden="true"></i>
-          Book Now
-        </button>
-      </div>
-    </section>
-
-    <section id="faq-section" class="faq-section" aria-label="Frequently Asked Questions">
-      <h2 class="section-title">Frequently Asked Questions</h2>
-      <div class="faq-list" role="list">
-        <article class="faq-item" role="listitem">
-          <button class="faq-question" aria-expanded="false" aria-controls="faq1" id="faq1-label">How long does a typical photo shoot last?</button>
-          <div class="faq-answer" id="faq1" role="region" aria-labelledby="faq1-label">
-            <p>Although when booking it says the photo shoots are timed, I’m very flexable and will go over that “time limit” if it means the best results for your project.</p>
-          </div>
-        </article>
-        <article class="faq-item" role="listitem">
-          <button class="faq-question" aria-expanded="false" aria-controls="faq2" id="faq2-label">Can I book multiple cars in one session?</button>
-          <div class="faq-answer" id="faq2" role="region" aria-labelledby="faq2-label">
-            <p>Yes! All bookings start with a meeting to discuss your project, starting there we can discuss how many cars, people, locations, time etc.</p>
-          </div>
-        </article>
-        <article class="faq-item" role="listitem">
-          <button class="faq-question" aria-expanded="false" aria-controls="faq3" id="faq3-label">Do you offer editing and retouching of photos you did not take?</button>
-          <div class="faq-answer" id="faq3" role="region" aria-labelledby="faq3-label">
-            <p>Yes! While all photos that I put out are touched up/edited I can also apply my skills to your own photos and create the best results of my capabilities that you’re looking for.</p>
-          </div>
-        </article>
-        <article class="faq-item" role="listitem">
-          <button class="faq-question" aria-expanded="false" aria-controls="faq4" id="faq4-label">How do I schedule my session?</button>
-          <div class="faq-answer" id="faq4" role="region" aria-labelledby="faq4-label">
-            <p>By clicking the button below it will lead you to my scheduling page where we can set up a meeting to further discuss your goals for your project and move forward from there.</p>
-          </div>
-        </article>
-        <article class="faq-item" role="listitem">
-          <button class="faq-question" aria-expanded="false" aria-controls="faq5" id="faq5-label">Do you only do automotive photography?</button>
-          <div class="faq-answer" id="faq5" role="region" aria-labelledby="faq5-label">
-            <p>No! Although automotive photography is what I am doing more often, I have experience in portraits, weddings and other such events. Please reach out for more information and to see my work of those types.</p>
-          </div>
-        </article>
-        <article class="faq-item" role="listitem">
-          <button class="faq-question" aria-expanded="false" aria-controls="faq6" id="faq6-label">How many photos come with a standard session?</button>
-          <div class="faq-answer" id="faq6" role="region" aria-labelledby="faq6-label">
-            <p>There is no guaranteed amount when working with me! Every project has its own elements that creates opportunities for photos. The range will vary depending on your project so it’s hard to say a typical amount. I come out to your project with open eyes looking for all photo opportunities and creative possibilities. Please reach out further for more information and to see factors of past projects and results of that session.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <footer></footer>
-
-  <script src="Java/main.js"></script>
-  <script src="footer.js"></script>
-  <script>
-    // Wait for DOM to be fully loaded
-    document.addEventListener('DOMContentLoaded', function() {
-      // Dynamically load the header
-      fetch('Backend/header.html')
-        .then(res => res.text())
-        .then(html => {
-          document.getElementById('header-include').innerHTML = html;
-          
-          // Initialize Lucide icons first
-          if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
+    <!--
+      Pre-paint theme script. Must stay inline and must stay above the app mount,
+      or the first frame paints in the wrong theme.
+    -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('pp_theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
           }
-          
-          // Small delay to ensure icons are rendered before initializing menu
-          setTimeout(() => {
-            // Initialize mobile menu functionality with new system
-            if (window.MobileMenuManager) {
-              window.MobileMenuManager.init();
-            } else if (window.initMobileMenu) {
-              window.initMobileMenu();
-            }
-          }, 100);
-          
-          // Set active state for current page
-          const homeLink = document.querySelector('a[href="index.html"]') || document.querySelector('a[href="/"]');
-          if (homeLink && !homeLink.classList.contains('active')) {
-            homeLink.classList.add('active');
-            homeLink.setAttribute('aria-current', 'page');
-          }
-        });
-    });
-
-    // Booking popup functionality (now opens the Typeform in a modal iframe)
-    // Clicking any existing button that calls openComingSoonPopup() will open the Typeform.
-    const TYPEFORM_URL = 'https://form.typeform.com/to/BumCiBtG';
-
-    function openComingSoonPopup() {
-      const popup = document.getElementById('comingSoonPopup');
-      if (!popup) return;
-
-      // Lazy-create iframe if needed
-      let iframe = popup.querySelector('iframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.setAttribute('title', 'Booking form');
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('allow', 'camera; microphone; autoplay; encrypted-media');
-        iframe.style.width = '100%';
-        iframe.style.height = '80vh';
-        iframe.style.border = '0';
-        // Append before the buttons container if present
-        const target = popup.querySelector('.popup-iframe-wrap') || popup.querySelector('.popup-content');
-        target.appendChild(iframe);
-      }
-
-      // Set src to load the form (do this here so it's lazy-loaded)
-      if (!iframe.src) iframe.src = TYPEFORM_URL;
-
-      popup.style.display = 'flex';
-
-      // Prevent body scroll while modal is open
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-      document.body.style.top = `-${window.scrollY}px`;
-      document.body.classList.add('popup-open');
-
-      // Reinitialize icons (close button) after showing popup
-      if (typeof lucide !== 'undefined') {
-        setTimeout(() => lucide.createIcons(), 50);
-      }
-    }
-
-    function closeComingSoonPopup() {
-      const popup = document.getElementById('comingSoonPopup');
-      if (!popup) return;
-
-      popup.style.display = 'none';
-
-      // Stop the iframe to free resources
-      const iframe = popup.querySelector('iframe');
-      if (iframe) {
-        try { iframe.src = 'about:blank'; } catch (e) { /* ignore */ }
-        iframe.remove();
-      }
-
-      // Restore body scroll
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      document.body.style.top = '';
-      document.body.classList.remove('popup-open');
-
-      // Restore scroll position
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
-    }
-
-    // Close popup when clicking outside
-    window.addEventListener('click', function(event) {
-      const popup = document.getElementById('comingSoonPopup');
-      if (popup && event.target === popup) {
-        closeComingSoonPopup();
-      }
-    });
-
-    // Close popup on escape key
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'Escape') {
-        const popup = document.getElementById('comingSoonPopup');
-        if (popup && popup.style.display === 'flex') {
-          closeComingSoonPopup();
+          document.documentElement.dataset.theme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'dark';
         }
-      }
-    });
-  </script>
-
-  <!-- Booking popup (Typeform iframe, lazy-loaded by JS) -->
-  <div id="comingSoonPopup" class="popup-overlay" aria-hidden="true" role="dialog" aria-label="Booking form popup">
-    <div class="popup-content">
-      <button type="button" class="popup-close" onclick="closeComingSoonPopup()" aria-label="Close popup">&times;</button>
-      <div class="popup-iframe-wrap">
-        <p class="popup-loading-text">Loading booking form…</p>
-      </div>
-      <div class="popup-fallback">
-        <p>If the form doesn't load, you can open it in a new tab:</p>
-        <a href="https://form.typeform.com/to/BumCiBtG" target="_blank" rel="noopener" class="popup-btn primary">Open booking form</a>
-      </div>
-    </div>
-  </div>
-
-</body>
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
