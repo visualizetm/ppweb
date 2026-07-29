@@ -13,8 +13,8 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0B0C0E" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#3A3D42" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#9DA0A5" media="(prefers-color-scheme: light)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Paps Productions" />
@@ -28,25 +28,35 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Archivo is loaded as a VARIABLE font across the width axis (75..125).
+      Display type runs expanded at wdth 118 so headings read as a stamped
+      nameplate. Requesting the axis rather than a static weight is what makes
+      that possible in one file.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Public+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
 
     <!--
       Pre-paint theme script. Must stay inline and must stay above the app mount,
       or the first frame paints in the wrong theme.
+
+      LIGHT IS THE DEFAULT. The grey card under working light is the primary
+      theme; dark is the same card in shade. This is a deliberate reversal of
+      the previous build, which was dark-first.
     -->
     <script>
       (function () {
         try {
           var t = localStorage.getItem('pp_theme');
           if (t !== 'light' && t !== 'dark') {
-            t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
           document.documentElement.dataset.theme = t;
         } catch (e) {
-          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.dataset.theme = 'light';
         }
       })();
     </script>

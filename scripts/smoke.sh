@@ -65,13 +65,28 @@ else
   pass "all API access goes through src/lib/dataSource.js"
 fi
 
-# Retired brand colour must not survive the reskin. Checked against the BUILT
-# output, not src/ — the build strips comments, so this catches a real surviving
-# value while ignoring the note in index.css that records the colour as retired.
-if grep -rqi '3a5aff' dist 2>/dev/null; then
-  fail "retired accent #3a5aff still present in the built output"
+# Retired accents must not survive a reskin. Checked against the BUILT output,
+# not src/ — the build strips comments, so this catches a real surviving value
+# while ignoring notes in index.css that record a colour as retired.
+#   3a5aff — the original static site's electric blue
+#   5b93e0 — the first rebuild's "twilight blue", retired with Direction B
+GHOSTS=''
+for hex in 3a5aff 5b93e0 9fc4f0 3e74be; do
+  if grep -rqi "$hex" dist 2>/dev/null; then GHOSTS="$GHOSTS #$hex"; fi
+done
+if [ -n "$GHOSTS" ]; then
+  fail "retired accent(s) still in built output:$GHOSTS"
 else
-  pass "retired accent #3a5aff fully swept from build output"
+  pass "all retired accents swept from build output"
+fi
+
+# Contrast. Mid-grey is unforgiving in both directions, so every token pair is
+# verified against the real values in src/index.css rather than trusted.
+if node scripts/check-contrast.mjs >/tmp/pp-contrast.log 2>&1; then
+  pass "contrast: $(grep -oE '[0-9]+ pair' /tmp/pp-contrast.log | head -1) checked, 0 failures"
+else
+  fail "contrast check failed"
+  grep -E '^\s+FAIL' /tmp/pp-contrast.log || tail -10 /tmp/pp-contrast.log
 fi
 
 # --- 3. Derive routes from App.jsx -----------------------------------------
