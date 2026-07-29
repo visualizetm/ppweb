@@ -51,7 +51,7 @@ export default function Navbar() {
     <>
       <header className={`nv ${scrolled ? 'nv-scrolled' : ''}`}>
         <nav className="wrap nv-inner" aria-label="Main">
-          <Wordmark size="sm" />
+          <Wordmark size="sm" variant="full" />
 
           <ul className="nv-links">
             {navLinks.map((link) => (
@@ -98,7 +98,7 @@ export default function Navbar() {
         {...(!open ? { inert: '' } : {})}
       >
         <div className="nv-drawer-top">
-          <Wordmark size="sm" />
+          <Wordmark size="sm" variant="full" />
           <button type="button" className="nv-close" onClick={() => setOpen(false)} aria-label="Close menu">
             <XClose width={20} height={20} aria-hidden="true" />
           </button>
@@ -127,15 +127,7 @@ export default function Navbar() {
           position: sticky;
           top: 0;
           z-index: 100;
-          background: var(--ground);
-          border-bottom: 1px solid transparent;
-          transition: border-color var(--duration) var(--ease),
-            box-shadow var(--duration) var(--ease);
-        }
-
-        .nv-scrolled {
-          border-bottom-color: var(--edge-strong);
-          box-shadow: var(--lift-1);
+          padding: var(--space-4) var(--space-6) 0;
         }
 
         .nv-inner {
@@ -143,7 +135,20 @@ export default function Navbar() {
           align-items: center;
           justify-content: space-between;
           gap: var(--space-6);
-          padding-block: var(--space-4);
+          padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+          border-radius: var(--radius-pill);
+          border: 1px solid var(--glass-border);
+          background: var(--chrome);
+          backdrop-filter: blur(var(--glass-blur-strong)) saturate(160%);
+          -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(160%);
+          box-shadow: var(--lift-1);
+          transition: background-color var(--duration) var(--ease),
+            box-shadow var(--duration) var(--ease);
+        }
+
+        .nv-scrolled .nv-inner {
+          background: var(--chrome-solid);
+          box-shadow: var(--lift-2);
         }
 
         .nv-links {
@@ -157,24 +162,18 @@ export default function Navbar() {
 
         .nv-link {
           display: block;
-          padding: var(--space-2) var(--space-3);
-          border-radius: var(--radius-sm);
+          padding: var(--space-2) var(--space-4);
+          border-radius: var(--radius-pill);
           color: var(--ink-soft);
           font-size: 0.875rem;
           font-weight: 500;
-          border-bottom: 2px solid transparent;
           transition: color var(--duration-fast) var(--ease),
-            border-color var(--duration-fast) var(--ease);
+            background-color var(--duration-fast) var(--ease);
         }
 
-        .nv-link:hover { color: var(--ink); }
+        .nv-link:hover { color: var(--ink); background: var(--glass-bg-strong); }
 
-        /* Active state is a stamped underline, not a filled capsule. */
-        .nv-link-on {
-          color: var(--ink);
-          font-weight: 600;
-          border-bottom-color: var(--ink);
-        }
+        .nv-link-on { color: var(--ink); background: var(--glass-bg-strong); }
 
         .nv-actions {
           display: flex;
@@ -188,9 +187,9 @@ export default function Navbar() {
           place-items: center;
           width: 36px;
           height: 36px;
-          border-radius: var(--radius);
+          border-radius: 50%;
           border: 1px solid var(--edge-strong);
-          background: var(--panel);
+          background: var(--glass-bg);
           color: var(--ink);
         }
 
@@ -263,6 +262,7 @@ export default function Navbar() {
         .nv-drawer-cta { margin-top: auto; }
 
         @media (max-width: 900px) {
+          .nv { padding-inline: var(--space-4); }
           .nv-links { display: none; }
           .nv-burger { display: grid; }
           .nv-cta { display: none; }

@@ -68,10 +68,11 @@ fi
 # Retired accents must not survive a reskin. Checked against the BUILT output,
 # not src/ — the build strips comments, so this catches a real surviving value
 # while ignoring notes in index.css that record a colour as retired.
-#   3a5aff — the original static site's electric blue
-#   5b93e0 — the first rebuild's "twilight blue", retired with Direction B
+# Only the ORIGINAL static site's electric blue is retired. #5b93e0 and its
+# siblings are the live accent again after the theme was reverted, so they must
+# NOT be listed here.
 GHOSTS=''
-for hex in 3a5aff 5b93e0 9fc4f0 3e74be; do
+for hex in 3a5aff; do
   if grep -rqi "$hex" dist 2>/dev/null; then GHOSTS="$GHOSTS #$hex"; fi
 done
 if [ -n "$GHOSTS" ]; then

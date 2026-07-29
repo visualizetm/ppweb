@@ -41,10 +41,14 @@ const contrast = (a, b) => {
 async function readTokens() {
   const css = await readFile(CSS_PATH, 'utf8');
 
-  /* Split at the dark-theme selector so the two themes are read separately. */
-  const darkStart = css.indexOf("[data-theme='dark']");
-  const lightBlock = css.slice(0, darkStart);
-  const darkBlock = css.slice(darkStart);
+  /* The site is dark-first: :root holds the default (dark) theme and
+     [data-theme='light'] overrides it. Split there so the two are read
+     separately — reading them as one block silently pairs a light-theme ink
+     against a dark-theme ground and reports nonsense. */
+  const overrideAt = css.indexOf("[data-theme='light']");
+  if (overrideAt === -1) throw new Error("could not find the [data-theme='light'] override block");
+  const baseBlock = css.slice(0, overrideAt);
+  const overrideBlock = css.slice(overrideAt);
 
   const parse = (block) => {
     const out = {};
@@ -56,9 +60,9 @@ async function readTokens() {
     return out;
   };
 
-  const light = parse(lightBlock);
-  /* Dark overrides only some tokens; anything it does not restate is shared. */
-  const dark = { ...light, ...parse(darkBlock) };
+  const dark = parse(baseBlock);
+  /* Light restates only some tokens; anything it omits is shared. */
+  const light = { ...dark, ...parse(overrideBlock) };
   return { light, dark };
 }
 
@@ -87,21 +91,29 @@ const PAIRS = [
   { fg: '--ink-faint', bg: '--panel', min: 3, nonText: true },
   { fg: '--ink-faint', bg: '--panel-high', min: 3, nonText: true },
 
-  // Primer is a fill. Text on it must pass; it as text must not.
+  /* The accent is a legible blue, so unlike an oxide fill it IS allowed as
+     text — that is how accent links and headings work in this design. What
+     must hold is that type placed ON the accent stays readable, including on
+     the hover shade. */
   { fg: '--on-primer', bg: '--primer', min: 4.5 },
-  { fg: '--on-primer', bg: '--primer-deep', min: 4.5 },
-  { fg: '--primer', bg: '--ground', min: 4.5, mustFail: true },
+  { fg: '--on-primer', bg: '--primer-light', min: 4.5 },
+  { fg: '--paint-ink', bg: '--ground', min: 4.5 },
+  { fg: '--paint-ink', bg: '--panel', min: 4.5 },
 
-  /* Filled controls need a 3:1 boundary against the page (WCAG 1.4.11). In
-     dark theme the primer fill alone only reaches 1.9:1, so the button carries
-     an explicit rim (--primer-edge) and THAT is what satisfies the rule. */
-  { fg: '--primer-edge', bg: '--ground', min: 3, nonText: true },
+  /* Filled controls need a 3:1 boundary against the page (WCAG 1.4.11). */
+  { fg: '--primer', bg: '--ground', min: 3, nonText: true },
 
-  // Badges are light tint + deep ink; each pairing carries its own text.
-  { fg: '--ok-ink', bg: '--ok-tint', min: 4.5 },
-  { fg: '--warn-ink', bg: '--warn-tint', min: 4.5 },
-  { fg: '--alert-ink', bg: '--alert-tint', min: 4.5 },
-  { fg: '--info-ink', bg: '--info-tint', min: 4.5 },
+  /* Badge tints are translucent overlays on the surface beneath, so the ink
+     is checked against the surfaces it can actually land on rather than
+     against a tint that has no opaque value of its own. */
+  { fg: '--ok-ink', bg: '--ground', min: 4.5 },
+  { fg: '--ok-ink', bg: '--panel', min: 4.5 },
+  { fg: '--warn-ink', bg: '--ground', min: 4.5 },
+  { fg: '--warn-ink', bg: '--panel', min: 4.5 },
+  { fg: '--alert-ink', bg: '--ground', min: 4.5 },
+  { fg: '--alert-ink', bg: '--panel', min: 4.5 },
+  { fg: '--info-ink', bg: '--ground', min: 4.5 },
+  { fg: '--info-ink', bg: '--panel', min: 4.5 },
 ];
 
 const { light, dark } = await readTokens();
@@ -110,8 +122,8 @@ let failures = 0;
 let checked = 0;
 
 for (const [themeName, tokens] of [
+  ['dark (default)', dark],
   ['light', light],
-  ['dark', dark],
 ]) {
   console.log(`\n  ${themeName.toUpperCase()}`);
 

@@ -34,7 +34,7 @@ export default function Footer() {
       <footer className="ft">
         <div className="wrap ft-inner">
           <div className="ft-brand">
-            <Wordmark size="md" variant="mark" />
+            <Wordmark size="lg" variant="full" />
             <p className="ft-tagline">{site.tagline}</p>
 
             <p className="ft-area">

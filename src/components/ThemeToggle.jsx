@@ -13,9 +13,9 @@ const readStored = () => {
   }
 };
 
-/* Light-first: anything that is not explicitly 'dark' resolves to light. */
+/* Dark-first: anything that is not explicitly 'light' resolves to dark. */
 const currentTheme = () =>
-  document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
 
 /* ===========================================================================
    Theme toggle.
@@ -30,10 +30,10 @@ export default function ThemeToggle({ className = '' }) {
 
   /* Follow the OS only while no explicit choice is stored. */
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
     const onChange = (e) => {
       if (readStored()) return;
-      const next = e.matches ? 'dark' : 'light';
+      const next = e.matches ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
       setTheme(next);
     };
@@ -69,9 +69,9 @@ export default function ThemeToggle({ className = '' }) {
           width: 36px;
           height: 36px;
           flex: none;
-          border-radius: var(--radius);
+          border-radius: 50%;
           border: 1px solid var(--edge-strong);
-          background: var(--panel);
+          background: var(--glass-bg);
           color: var(--ink-soft);
           transition: background-color var(--duration-fast) var(--ease),
             color var(--duration-fast) var(--ease),

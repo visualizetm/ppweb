@@ -3,36 +3,17 @@ import { Link } from 'react-router-dom';
 /* ===========================================================================
    Wordmark.
    ---------------------------------------------------------------------------
-   The mark is Michael's existing logo, same glyph, rendered MONOCHROME.
+   The logo is rendered AS-IS from the original SVG — a plain <img>, its own
+   navy, nothing recoloured, nothing masked, nothing redrawn. An earlier
+   version painted it through a CSS mask to force it monochrome; that has been
+   removed. The file is used exactly as supplied.
 
-   The source SVG is filled #234F96 navy. Direction B's whole argument is that
-   the chrome carries no colour of its own — colour belongs to the photographs
-   — so a navy tile in the navbar would be the one thing on the page
-   contradicting the thesis. Instead the SVG is used as a CSS mask and painted
-   in currentColor, so it reads as a stamped plate and inherits the ink of
-   whatever theme it sits in.
+   It sits on a white tile because the mark's own navy needs something to be
+   navy against — placed straight onto the near-black canvas it disappears.
 
-   This is a mask, not an <img>, which is why the file's own fill colour stops
-   mattering. If Michael later supplies a mark with transparency or multiple
-   colours, the mask still works — it keys on alpha, not on hue.
-
-   TWO VARIANTS, AND WHY
-
-   The existing logo is not a monogram — it is a camera-body sticker with
-   "PAPS" in rounded graffiti lettering and "PRODUCTIONS" beneath. It already
-   contains the name. So setting it next to a typographic wordmark says the
-   name twice, and at navbar size the lettering collapses into an unreadable
-   blob.
-
-     variant="type"  typographic only. Used in the navbar, where legibility at
-                     26px matters more than personality.
-     variant="mark"  the real logo. Used in the footer at a size where it can
-                     actually be read, and as the favicon.
-
-   Worth saying plainly: the sticker style suits vinyl on a rear window and an
-   Instagram avatar — which is where a car photographer actually uses a mark —
-   but it pulls against this site's stamped, industrial type. Michael may want
-   a second, simpler mark for screen use. Flagged, not decided.
+   variant="mark"  the logo on its own
+   variant="full"  logo plus the typographic name beside it
+   variant="type"  name only, no logo
    =========================================================================== */
 
 export default function Wordmark({
@@ -42,10 +23,17 @@ export default function Wordmark({
   showText = true,
   className = '',
 }) {
+  const showMark = variant === 'mark' || variant === 'full';
+  const showName = (variant === 'type' || variant === 'full') && showText;
+
   const content = (
     <>
-      {variant === 'mark' && <span className={`wm-mark wm-mark-${size}`} role="presentation" />}
-      {variant === 'type' && showText && (
+      {showMark && (
+        <span className={`wm-tile wm-tile-${size}`}>
+          <img src="/brand/logo.svg" alt="" width="100%" height="100%" loading="eager" />
+        </span>
+      )}
+      {showName && (
         <span className="wm-text">
           <span className="wm-primary">Paps</span>
           <span className="wm-secondary">Productions</span>
@@ -75,29 +63,30 @@ export default function Wordmark({
           color: var(--ink);
         }
 
-        /* The glyph, painted rather than embedded. */
-        .wm-mark {
-          display: block;
+        /* A white tile so the mark's own navy has something to sit against.
+           The image itself is untouched. */
+        .wm-tile {
+          display: grid;
+          place-items: center;
           flex: none;
-          background-color: currentColor;
-          -webkit-mask-image: url('/brand/logo.svg');
-          mask-image: url('/brand/logo.svg');
-          -webkit-mask-repeat: no-repeat;
-          mask-repeat: no-repeat;
-          -webkit-mask-position: center;
-          mask-position: center;
-          -webkit-mask-size: contain;
-          mask-size: contain;
-          transition: opacity var(--duration-fast) var(--ease);
+          background: #ffffff;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          box-shadow: 0 0 0 1px var(--edge-strong);
+          transition: box-shadow var(--duration-fast) var(--ease),
+            transform var(--duration-fast) var(--ease);
         }
 
-        /* Sized so the lettering inside the mark stays readable. Below about
-           64px wide this logo is mush, which is why the navbar does not use it. */
-        .wm-mark-sm { width: 72px; height: 72px; }
-        .wm-mark-md { width: 92px; height: 92px; }
-        .wm-mark-lg { width: 116px; height: 116px; }
+        /* Sized up per the client's request. */
+        .wm-tile-sm { width: 48px; height: 48px; padding: 3px; }
+        .wm-tile-md { width: 64px; height: 64px; padding: 4px; }
+        .wm-tile-lg { width: 92px; height: 92px; padding: 6px; }
 
-        .wm:hover .wm-mark { opacity: 0.7; }
+        .wm:hover .wm-tile {
+          box-shadow: 0 0 0 1px var(--glass-border-brand),
+            0 4px 18px rgba(var(--primer-rgb), 0.3);
+          transform: translateY(-1px);
+        }
 
         .wm-text {
           display: flex;
@@ -124,11 +113,11 @@ export default function Wordmark({
           text-transform: uppercase;
         }
 
-        .wm-sm .wm-primary { font-size: 0.95rem; }
+        .wm-sm .wm-primary { font-size: 1.15rem; }
         .wm-sm .wm-secondary { font-size: 0.48rem; letter-spacing: 0.16em; }
-        .wm-md .wm-primary { font-size: 1.15rem; }
+        .wm-md .wm-primary { font-size: 1.45rem; }
         .wm-md .wm-secondary { font-size: 0.55rem; }
-        .wm-lg .wm-primary { font-size: 1.7rem; }
+        .wm-lg .wm-primary { font-size: 2.1rem; }
         .wm-lg .wm-secondary { font-size: 0.7rem; }
       `}</style>
     </>
