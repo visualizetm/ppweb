@@ -116,23 +116,40 @@ STRIPE_WEBHOOK_SECRET=whsec_...        # server-side ONLY
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...  # safe client-side
 ```
 
-## 5. The `api/` directory is not written yet
+## 5. The `api/` directory
 
-The client half of production is complete — `src/lib/sources/live.js` defines
-every call with its exact request and response shape. The serverless functions
-those calls expect **have not been built**. Before flipping the flag you need,
-under `api/`:
+All fourteen serverless functions are written:
 
-- `_lib/mongo.js` — cached `MongoClient` on `globalThis` so warm invocations
-  reuse the connection
-- `_lib/auth.js` — HMAC-signed cookie sessions, `timingSafeEqual` compare
-- `_lib/notify.js` — email, swallowing its own errors
-- `bookings.js`, `availability.js`
-- `admin/login.js`, `admin/logout.js`, `admin/session.js`,
-  `admin/bookings.js`, `admin/stats.js`, `admin/invoices.js`
-- `invoices.js`, `invoices/pay.js`, `invoices/viewed.js`
+```
+api/_lib/mongo.js       cached MongoClient on globalThis
+api/_lib/auth.js        HMAC-signed cookie sessions, timing-safe compare
+api/_lib/notify.js      email; swallows its own errors
+api/bookings.js         POST, public — validates, inserts, then notifies
+api/availability.js     GET, public — booked slots only, no personal data
+api/admin/login.js      timing-safe password check, sets the session cookie
+api/admin/logout.js     clears it
+api/admin/session.js    is this caller signed in
+api/admin/bookings.js   GET list/search + PATCH whitelisted fields
+api/admin/stats.js      dashboard aggregates
+api/admin/invoices.js   GET list, POST create, PATCH void
+api/invoices.js         GET one, public — needs the id, no listing
+api/invoices/viewed.js  records the FIRST open only
+api/invoices/pay.js     STUB — see the warning below
+```
 
-This is the single largest remaining piece of work.
+Every admin route is behind `requireAdmin`, PATCH bodies are whitelisted rather
+than spread, and the search string is regex-escaped before use.
+
+**`api/invoices/pay.js` is a stub and must not ship as it stands.** It returns
+`501` unless `STRIPE_SECRET_KEY` is set, and even then it marks an invoice paid
+from a client request. Card details must never reach this server. The real
+shape is: Stripe Elements collects the card in the browser and returns a
+PaymentMethod id, this endpoint confirms a PaymentIntent server-side, and a
+separate webhook handler for `invoice.paid` is what actually marks it paid. The
+file says all of this in a comment at the top.
+
+Nothing here has been run against a live database — there is no cluster to run
+it against yet. Treat step 6's verification as the real test.
 
 ## 6. Deploy and verify
 
