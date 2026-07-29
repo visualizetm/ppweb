@@ -51,7 +51,8 @@ export default function HowManyPhotos() {
 
         .hmp-grid {
           display: grid;
-          grid-template-columns: 0.85fr 1.15fr;
+          /* min-width: 0 so the long lead paragraph cannot widen the track. */
+          grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
           gap: var(--space-16);
           align-items: start;
         }

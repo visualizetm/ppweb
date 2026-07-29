@@ -166,9 +166,26 @@ export default function Booking() {
   }, []);
 
   /* Move focus to the new step's heading so a screen reader lands in the right
-     place and a keyboard user does not get dumped back at the top of the page. */
+     place and a keyboard user is not dumped back at the top of the page.
+
+     focus() on its own scrolls the heading to the top of the viewport, where
+     the sticky navbar and progress bar sit on top of it — and because the step
+     plays an entrance transform, the browser's implicit scroll fires against a
+     position that is about to change. So: focus WITHOUT scrolling, then scroll
+     deliberately on the next frame, which is when layout has settled.
+     scrollIntoView honours the scroll-margin-top set in index.css, so the
+     landing position stays tied to the measured nav height. */
   useEffect(() => {
-    if (headingRef.current) headingRef.current.focus();
+    const el = headingRef.current;
+    if (!el) return undefined;
+
+    el.focus({ preventScroll: true });
+
+    const frame = requestAnimationFrame(() => {
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [stage]);
 
   const set = useCallback((key, value) => {
@@ -185,9 +202,11 @@ export default function Booking() {
     const found = validateStep(step.id, form);
     setErrors(found);
     if (Object.keys(found).length) {
+      /* Same reasoning as the step heading: scroll deliberately so the field
+         clears the sticky chrome rather than hiding beneath it. */
       const first = document.getElementById(`f-${Object.keys(found)[0]}`);
+      first?.focus?.({ preventScroll: true });
       first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      first?.focus?.();
       return;
     }
     const currentPos = activeSteps.findIndex((s) => s.id === step.id);
@@ -377,7 +396,7 @@ export default function Booking() {
     <>
       <Seo title="Book a shoot" />
 
-      <div className="bk-progress" role="status" aria-live="polite">
+      <div className="bk-wizard-vars bk-progress" role="status" aria-live="polite">
         <div className="wrap bk-progress-inner">
           <span className="plate-label">
             Step {pos + 1} of {total}
@@ -389,10 +408,10 @@ export default function Booking() {
         </div>
       </div>
 
-      <section className="bk">
+      <section className="bk bk-wizard">
         <div className="wrap wrap-narrow">
           <div key={step.id} className={`bk-step bk-step-${dir}`}>
-            <h1 className="bk-step-title" tabIndex={-1} ref={headingRef}>
+            <h1 className="bk-step-title" data-step-heading tabIndex={-1} ref={headingRef}>
               {step.title}
             </h1>
             <p className="bk-step-sub">{step.sub}</p>
@@ -590,7 +609,7 @@ function StepWhen({ form, set, errors, pkg, taken, light }) {
         <input
           id="f-locationPref"
           className="field-input"
-          placeholder="Back roads near Media, or somewhere you suggest"
+          placeholder="Back roads near Media — or leave it to me"
           value={form.locationPref}
           onChange={(e) => set('locationPref', e.target.value)}
         />
@@ -877,9 +896,12 @@ function BookingStyles() {
       .bk-promises strong { color: var(--ink); }
 
       /* --- progress --- */
+      /* Published so scroll-margin-top can clear this too, not just the nav. */
+      .bk-wizard { --progress-h: 52px; }
+
       .bk-progress {
         position: sticky;
-        top: 61px;
+        top: var(--nav-h, 61px);
         z-index: 50;
         background: var(--ground-deep);
         border-bottom: 1px solid var(--edge);
@@ -948,7 +970,7 @@ function BookingStyles() {
       }
 
       /* --- shoot cards --- */
-      .bk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-3); }
+      .bk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr)); gap: var(--space-3); }
       .bk-card {
         display: flex; flex-direction: column; gap: var(--space-2);
         padding: var(--space-4); text-align: left;
@@ -965,6 +987,13 @@ function BookingStyles() {
       .bk-card-tag { font-size: 0.78rem; line-height: 1.45; }
 
       /* --- dates --- */
+      .bk-dates {
+        /* Deliberate edge bleed: negative inline margin plus matching padding,
+           so cards can run to the screen edge while the first and last still
+           align with the text gutter. */
+        margin-inline: calc(var(--space-4) * -1);
+        padding-inline: var(--space-4);
+      }
       .bk-date {
         width: 62px;
         display: grid; gap: 1px; place-items: center;
@@ -982,7 +1011,7 @@ function BookingStyles() {
       .bk-date-num { font-size: 1.15rem; font-weight: 700; color: var(--ink); line-height: 1.1; }
 
       /* --- slots --- */
-      .bk-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: var(--space-2); }
+      .bk-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(132px, 100%), 1fr)); gap: var(--space-2); }
       .bk-slot {
         position: relative; display: grid; gap: 2px; justify-items: start; align-content: start; min-height: 74px;
         padding: var(--space-3) var(--space-4);
@@ -1035,6 +1064,9 @@ function BookingStyles() {
         display: flex; align-items: center; justify-content: space-between;
         gap: var(--space-4); margin-top: var(--space-10);
         padding-top: var(--space-6); border-top: 1px solid var(--edge);
+        /* Clears the home indicator and the Safari toolbar on notched
+           iPhones, where a fixed margin is not enough. */
+        padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
       }
       .bk-send-error {
         display: flex; align-items: center; gap: var(--space-2);

@@ -265,6 +265,7 @@ export default function Services() {
         .sv-group-blurb { margin: 0; color: var(--text-muted); }
 
         .sv-packages { display: grid; gap: var(--space-6); }
+      .sv-pkg { min-width: 0; }
 
         .sv-pkg {
           padding: var(--space-8);
@@ -321,7 +322,7 @@ export default function Services() {
 
         .sv-tiers {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
           gap: var(--space-4);
           margin-bottom: var(--space-5);
         }
@@ -472,7 +473,7 @@ export default function Services() {
 
         .sv-rules {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
           gap: var(--space-5);
           margin: var(--space-10) 0 var(--space-12);
         }

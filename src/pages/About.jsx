@@ -153,7 +153,7 @@ export default function About() {
 
         .ab-bts {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
           gap: var(--space-5);
           margin-top: var(--space-10);
         }
@@ -187,7 +187,7 @@ export default function About() {
 
         .ab-beliefs {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
           gap: var(--space-5);
           list-style: none;
           margin: var(--space-10) 0 0;

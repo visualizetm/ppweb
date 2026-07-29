@@ -123,7 +123,7 @@ export default function DemoBadge() {
         }
 
         .db-panel {
-          width: min(440px, calc(100vw - var(--space-8)));
+          width: min(440px, calc(100% - var(--space-8)));
           background: var(--bg-elevated);
           border-color: var(--border-light);
           box-shadow: var(--shadow-chrome-strong);

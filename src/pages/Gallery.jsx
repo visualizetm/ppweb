@@ -206,7 +206,8 @@ export default function Gallery() {
 
         .gl-images {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          min-width: 0;
+          grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
           gap: var(--space-4);
           margin-bottom: var(--space-8);
         }
@@ -219,6 +220,7 @@ export default function Gallery() {
         }
 
         .gl-photo {
+          min-width: 0;
           aspect-ratio: 3 / 2;
           overflow: hidden;
           min-height: 0;

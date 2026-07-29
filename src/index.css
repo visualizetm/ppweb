@@ -59,6 +59,63 @@ button {
   cursor: pointer;
 }
 
+/* ROOT FIX for horizontal overflow.
+   <fieldset> ships min-width: min-content in the UA stylesheet — it is the one
+   element where min-width: auto semantics do not apply. A fieldset wrapping a
+   horizontal scroller therefore refuses to shrink below the intrinsic width of
+   everything inside it, so the scroller never gets a constrained box to scroll
+   within: it expands instead, and drags the whole document sideways.
+
+   That is exactly what happened on the booking date step — 21 date cards
+   forced the document to 1478px inside a 390px viewport. */
+fieldset {
+  min-width: 0;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Flex and grid children default to min-width: auto, which refuses to shrink
+   below content. Any of these holding long text or a nested scroller would
+   push the page wide. This is the general form of the bug above. */
+.wrap > *,
+[data-reveal] > *,
+.hscroll-wrap,
+.plate > *,
+.bk-rows > *,
+.ad-main > * {
+  min-width: 0;
+}
+
+img,
+video,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+label,
+input,
+textarea,
+button,
+a {
+  overflow-wrap: break-word;
+}
+
 p,
 h1,
 h2,
@@ -66,7 +123,6 @@ h3,
 h4,
 h5,
 h6 {
-  overflow-wrap: break-word;
   margin: 0;
 }
 
@@ -121,6 +177,14 @@ h6 {
      that set font-variation-settings do not need editing. */
   --wdth-display: 100;
   --wdth-plate: 100;
+
+  /* Fallback only. The real value is measured from the nav by a
+     ResizeObserver in App.jsx and written onto :root — the navbar is a
+     floating pill whose height changes with breakpoint and scrolled state,
+     so a hardcoded number drifts. */
+  --nav-h: 72px;
+  --progress-h: 0px; /* set by the wizard while its sticky bar is mounted */
+  --nav-offset: calc(var(--nav-h) + var(--progress-h) + var(--space-4));
 
   /* --- Spacing ---------------------------------------------------------- */
   --space-1: 0.25rem;
@@ -315,12 +379,36 @@ a {
   top: var(--space-4);
 }
 
+/* ------------------------------------------------ sticky-nav clearance ---
+   The wizard moves focus to each new step's heading, which is correct — but
+   the browser then scrolls that heading to the very top of the viewport,
+   directly underneath the floating navbar. scroll-margin-top is the fix, not
+   extra padding: it changes where the scroll lands without moving the element.
+
+   The same applies to the first invalid field, which validateStep() scrolls
+   into view for exactly the same reason, and to any :target anchor. */
+html {
+  scroll-padding-top: var(--nav-offset);
+}
+
+h1,
+h2,
+h3,
+:target,
+[data-step-heading],
+[id^='f-'] {
+  scroll-margin-top: var(--nav-offset);
+}
+
 /* ----------------------------------------------------------- layout ------ */
 .wrap {
   width: 100%;
   max-width: var(--max-width);
   margin-inline: auto;
-  padding-inline: var(--space-6);
+  /* max() against the insets rather than a fixed margin, so content clears the
+     rounded corners and the notch in landscape without over-padding on a
+     device that has no insets at all. */
+  padding-inline: max(var(--space-6), env(safe-area-inset-left), env(safe-area-inset-right));
 }
 
 .wrap-wide {
@@ -650,9 +738,22 @@ a {
 
 [data-reveal=''],
 [data-reveal='fade'] { transform: translate3d(0, 14px, 0); }
-[data-reveal='slide-left'] { transform: translate3d(-24px, 0, 0); }
-[data-reveal='slide-right'] { transform: translate3d(24px, 0, 0); }
 [data-reveal='scale'] { transform: scale(0.96); }
+
+/* Horizontal reveals only above 900px.
+   An un-revealed element sits at its offset transform, so a +24px X offset on
+   a full-width block pushes the document sideways for as long as it is below
+   the fold — which is a real horizontal-overflow bug, not a cosmetic one. It
+   was caught at 320px on the home page. Below 900px these columns are stacked
+   anyway, where a sideways slide reads oddly, so they fall back to the same
+   vertical fade as everything else. */
+[data-reveal='slide-left'],
+[data-reveal='slide-right'] { transform: translate3d(0, 14px, 0); }
+
+@media (min-width: 900px) {
+  [data-reveal='slide-left'] { transform: translate3d(-24px, 0, 0); }
+  [data-reveal='slide-right'] { transform: translate3d(24px, 0, 0); }
+}
 [data-reveal='stagger'] { opacity: 1; transform: none; }
 
 [data-reveal][data-revealed] {
@@ -693,10 +794,14 @@ a {
   gap: var(--space-2);
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
-  scroll-padding-inline: var(--space-1);
+  /* Matches the page gutter so a snapped card never sits flush to the edge. */
+  scroll-padding-inline: var(--space-4);
+  /* Belt and braces: a scroller must never widen its parent. */
+  min-width: 0;
+  max-width: 100%;
   padding-bottom: var(--space-2);
   scrollbar-width: thin;
   scrollbar-color: var(--edge-strong) transparent;
@@ -720,29 +825,36 @@ a {
   position: relative;
 }
 
+.hscroll-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Fade on the trailing edge so the row reads as scrollable rather than cut
+   off — which is precisely how it read before. */
 .hscroll-wrap::after {
   content: '';
   position: absolute;
   top: 0;
   right: 0;
   bottom: var(--space-2);
-  width: 40px;
+  width: 44px;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--ground));
 }
 
-/* Nothing may push the page sideways. A single overflowing element turns every
-   vertical swipe on a phone into a fight with horizontal scroll. */
-html,
-body {
-  overflow-x: clip;
-  max-width: 100%;
+/* Once you have scrolled to the end there is nothing left to hint at. */
+.hscroll-wrap:has(.hscroll[data-at-end])::after {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
 }
+
+/* DIAGNOSTIC: clip temporarily removed to surface the real overflow. */
 
 /* ------------------------------------------------------- responsive ------ */
 @media (max-width: 768px) {
   .wrap {
-    padding-inline: var(--space-4);
+    padding-inline: max(var(--space-4), env(safe-area-inset-left), env(safe-area-inset-right));
   }
 
   .section {

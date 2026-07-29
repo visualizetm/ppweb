@@ -90,6 +90,28 @@ else
   grep -E '^\s+FAIL' /tmp/pp-contrast.log || tail -10 /tmp/pp-contrast.log
 fi
 
+# Horizontal overflow. Opt-in because it drives a real browser through every
+# route, breakpoint and wizard step and takes a couple of minutes:
+#   SMOKE_OVERFLOW=1 bash scripts/smoke.sh
+# CI should set it. It is the only thing standing between this repo and the
+# 1478px-wide-in-a-390px-viewport bug shipping again.
+if [ "${SMOKE_OVERFLOW:-0}" = "1" ]; then
+  say "==> overflow"
+  npm run preview -- --port 4599 --strictPort >/tmp/pp-ov-preview.log 2>&1 &
+  OV_PID=$!
+  for _ in $(seq 1 40); do
+    curl -fsS --noproxy '*' "http://127.0.0.1:4599/" >/dev/null 2>&1 && break
+    sleep 0.25
+  done
+  if node scripts/check-overflow.mjs http://127.0.0.1:4599 >/tmp/pp-overflow.log 2>&1; then
+    pass "no horizontal overflow at any breakpoint"
+  else
+    fail "horizontal overflow detected"
+    grep -E '^\s+FAIL' /tmp/pp-overflow.log || tail -12 /tmp/pp-overflow.log
+  fi
+  kill "$OV_PID" 2>/dev/null || true
+fi
+
 # --- 3. Derive routes from App.jsx -----------------------------------------
 say "==> routes"
 # Splat routes ("/admin/*") become their base path so the section still gets

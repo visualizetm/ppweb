@@ -371,7 +371,7 @@ export default function Invoice() {
 function InvoiceStyles() {
   return (
     <style>{`
-      .iv { min-height: 100vh; background: var(--ground-deep); padding: var(--space-8) var(--space-4) var(--space-16); }
+      .iv { min-height: 100dvh; background: var(--ground-deep); padding: var(--space-8) var(--space-4) var(--space-16); }
       .iv-shell { max-width: 660px; margin-inline: auto; display: grid; gap: var(--space-6); }
       .iv-empty { display: grid; place-items: center; }
 

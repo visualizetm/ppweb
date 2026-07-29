@@ -6,10 +6,10 @@
 export default function AdminStyles() {
   return (
     <style>{`
-      .ad-boot { min-height: 100vh; background: var(--ground); }
+      .ad-boot { min-height: 100dvh; background: var(--ground); }
 
       /* --- login --- */
-      .ad-login { min-height: 100vh; display: grid; place-items: center; background: var(--ground-deep); padding: var(--space-6); }
+      .ad-login { min-height: 100dvh; display: grid; place-items: center; background: var(--ground-deep); padding: var(--space-6); }
       .ad-login-box { width: min(380px, 100%); padding: var(--space-8); display: grid; gap: var(--space-4); }
       .ad-login-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius);
         background: var(--panel-high); color: var(--ink); }
@@ -26,10 +26,10 @@ export default function AdminStyles() {
         text-transform: uppercase; color: var(--ink-soft); }
 
       /* --- shell --- */
-      .ad { display: grid; grid-template-columns: 245px 1fr; min-height: 100vh; background: var(--ground); }
+      .ad { display: grid; grid-template-columns: 245px 1fr; min-height: 100dvh; background: var(--ground); }
 
       .ad-side { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-4);
-        background: var(--ground-deep); border-right: 1px solid var(--edge-strong); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        background: var(--ground-deep); border-right: 1px solid var(--edge-strong); position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
       .ad-side-top { display: flex; align-items: center; gap: var(--space-3); }
       .ad-mark { width: 28px; height: 28px; border-radius: var(--radius); background-color: var(--ink);
         -webkit-mask: url('/brand/logo.svg') center/contain no-repeat; mask: url('/brand/logo.svg') center/contain no-repeat; }

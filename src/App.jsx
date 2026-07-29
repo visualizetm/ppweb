@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
@@ -55,10 +55,62 @@ function RouteFallback() {
   );
 }
 
+/* ===========================================================================
+   Measures the navbar and publishes its height as --nav-h.
+   ---------------------------------------------------------------------------
+   The nav is a floating pill: its height changes between breakpoints and when
+   it enters its scrolled state. Anything that needs to clear it —
+   scroll-margin-top on step headings, scroll-padding-top on the document —
+   reads --nav-h, so a hardcoded number would drift the moment the nav
+   changes. A ResizeObserver keeps it honest.
+   =========================================================================== */
+function useNavHeight() {
+  useEffect(() => {
+    const root = document.documentElement;
+
+    const measure = (el) => {
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h > 0) root.style.setProperty('--nav-h', `${h}px`);
+    };
+
+    const find = () => document.querySelector('.nv .nv-inner') || document.querySelector('.nv');
+
+    let el = find();
+    if (!el) {
+      /* Admin and invoice routes have no marketing nav at all. */
+      root.style.setProperty('--nav-h', '0px');
+      return undefined;
+    }
+
+    measure(el);
+    const ro = new ResizeObserver(() => measure(el));
+    ro.observe(el);
+
+    /* The pill also changes height when it solidifies on scroll, which is a
+       style change rather than a resize on some engines. */
+    const onScroll = () => {
+      const next = find();
+      if (next && next !== el) {
+        ro.unobserve(el);
+        el = next;
+        ro.observe(el);
+      }
+      if (el) measure(el);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+}
+
 export default function App() {
   const { pathname } = useLocation();
   useReveal();
   useScrollTop();
+  useNavHeight();
 
   /* The dashboard is a different product from the marketing site and gets none
      of its chrome — no navbar, no footer, no page max-width. */
