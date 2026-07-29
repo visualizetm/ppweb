@@ -68,7 +68,7 @@ export default function Navbar() {
 
           <div className="nv-actions">
             <ThemeToggle />
-            <Link to="/book" className="btn btn-primary btn-sm nv-cta">
+            <Link to="/booking" className="btn btn-primary btn-sm nv-cta">
               Book a shoot
             </Link>
             <button
@@ -117,7 +117,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <Link to="/book" className="btn btn-primary nv-drawer-cta">
+        <Link to="/booking" className="btn btn-primary nv-drawer-cta">
           Book a shoot
         </Link>
       </aside>

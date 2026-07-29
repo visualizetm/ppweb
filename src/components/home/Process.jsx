@@ -37,7 +37,7 @@ export default function Process() {
     <>
       <section className="pr section section-dark" aria-labelledby="pr-title">
         <div className="wrap">
-          <div className="pr-head reveal">
+          <div className="pr-head" data-reveal>
             <h2 id="pr-title" className="section-title">
               How it works
             </h2>
@@ -46,7 +46,7 @@ export default function Process() {
             </p>
           </div>
 
-          <ol className="pr-grid stagger">
+          <ol className="pr-grid" data-reveal="stagger">
             {STEPS.map(({ num, title, desc, icon: Icon }) => (
               <li key={num} className="pr-card">
                 <span className="pr-num">{num}</span>

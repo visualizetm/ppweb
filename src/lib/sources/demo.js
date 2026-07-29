@@ -132,7 +132,7 @@ export async function submitBooking(payload) {
     ref: nextRef(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    path: payload.path,
+    path: payload.path || 'booking',
     packageSlug: payload.packageSlug || null,
     tierId: payload.tierId || null,
     tierName: payload.tierName || null,
@@ -152,17 +152,20 @@ export async function submitBooking(payload) {
       phone: payload.contact?.phone || '',
       source: payload.contact?.source || '',
     },
-    /* A consultation is an inquiry until he confirms it; a direct session sits
-       at 'quoted' until the deposit clears. */
-    status: payload.path === 'consultation' ? 'consultation-booked' : 'quoted',
+    /* Every booking arrives as `new`. Nothing is charged at booking time and
+       nothing is confirmed — Michael reviews it, quotes it, and sends an
+       invoice link afterwards. Payment is a step inside the pipeline now,
+       not its entry point. */
+    status: 'new',
+    flexible: Boolean(payload.flexible),
     read: false,
     notes: '',
     messageCount: 1,
     attachmentCount: 0,
     pricing: payload.pricing || null,
-    payment: payload.path === 'session'
-      ? { status: 'requires_payment', intentId: null, amountCents: pricing.depositCents }
-      : null,
+    /* No payment object at creation. Invoices are separate records created by
+       Michael from the admin — see the invoice layer. */
+    invoices: [],
     /* Marks rows created during this demo session, so they are visually
        distinguishable from the seed in the dashboard. */
     demoCreated: true,

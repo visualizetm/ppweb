@@ -33,7 +33,7 @@ export default function Testimonials() {
     <>
       <section className="ts section" aria-labelledby="ts-title">
         <div className="wrap">
-          <div className="ts-head reveal">
+          <div className="ts-head" data-reveal>
             <h2 id="ts-title" className="section-title">
               What clients say
             </h2>
@@ -45,7 +45,7 @@ export default function Testimonials() {
           </div>
 
           {hasReal ? (
-            <div className="ts-grid stagger">
+            <div className="ts-grid" data-reveal="stagger">
               {testimonials.map((t) => (
                 <figure key={t.author} className="ts-card">
                   <span className="ts-stars" aria-hidden="true">
@@ -67,7 +67,7 @@ export default function Testimonials() {
               ))}
             </div>
           ) : (
-            <div className="ts-grid stagger">
+            <div className="ts-grid" data-reveal="stagger">
               {Array.from({ length: SLOT_COUNT }, (_, i) => (
                 <div key={i} className="ts-slot" data-label="Client quote — awaiting real testimonial">
                   <span className="ts-slot-label">Client quote</span>

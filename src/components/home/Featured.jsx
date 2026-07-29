@@ -9,7 +9,7 @@ export default function Featured() {
     <>
       <section className="fw section section-dark" aria-labelledby="fw-title">
         <div className="wrap">
-          <div className="fw-head reveal">
+          <div className="fw-head" data-reveal>
             <div>
               <h2 id="fw-title" className="section-title">
                 Recent work
@@ -24,7 +24,7 @@ export default function Featured() {
             </Link>
           </div>
 
-          <div className="fw-grid stagger">
+          <div className="fw-grid" data-reveal="stagger">
             {featuredGalleries.map((g) => (
               <GalleryCard key={g.slug} gallery={g} featured />
             ))}

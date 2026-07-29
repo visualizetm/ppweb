@@ -11,9 +11,12 @@
 /* Where the shooting happens. Used to compute real sunrise/sunset and golden
    hour for every date on the calendar — see src/lib/sun.js. */
 export const location = {
-  label: 'Philadelphia / Main Line, PA',
-  latitude: 39.9526,
-  longitude: -75.1652,
+  label: 'Delaware County, PA',
+  /* Media, the county seat, sits close to the geographic centre of Delaware
+     County. Sun times vary by well under a minute across the whole county, so
+     one point is plenty — this is not a per-shoot calculation. */
+  latitude: 39.9168,
+  longitude: -75.3877,
   timeZone: 'America/New_York',
 };
 

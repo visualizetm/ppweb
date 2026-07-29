@@ -106,7 +106,7 @@ export default function Gallery() {
 
         <div className="wrap gl-foot">
           {pkg && (
-            <Link to={`/book?package=${pkg.slug}`} className="btn btn-primary">
+            <Link to={`/booking?package=${pkg.slug}`} className="btn btn-primary">
               Book a {pkg.shortName.toLowerCase()} shoot
               <ArrowRight className="arrow" width={16} height={16} aria-hidden="true" />
             </Link>

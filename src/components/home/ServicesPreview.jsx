@@ -25,7 +25,7 @@ export default function ServicesPreview() {
     <>
       <section className="svc section" aria-labelledby="svc-title">
         <div className="wrap">
-          <div className="svc-head reveal">
+          <div className="svc-head" data-reveal>
             <div>
               <h2 id="svc-title" className="section-title">
                 What I shoot
@@ -41,7 +41,7 @@ export default function ServicesPreview() {
             </Link>
           </div>
 
-          <div className="svc-grid stagger">
+          <div className="svc-grid" data-reveal="stagger">
             {packages.map((p) => {
               const Icon = ICONS[p.icon] || Car01;
               const cheapest = p.tiers

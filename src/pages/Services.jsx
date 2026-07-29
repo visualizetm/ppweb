@@ -64,7 +64,7 @@ export default function Services() {
       {packageGroups.map((group) => (
         <section key={group.id} className="section section-tight" aria-labelledby={`grp-${group.id}`}>
           <div className="wrap">
-            <div className="sv-group-head reveal">
+            <div className="sv-group-head" data-reveal>
               <h2 id={`grp-${group.id}`} className="sv-group-title">
                 {group.title}
               </h2>
@@ -75,7 +75,7 @@ export default function Services() {
               {group.items.map((pkg) => {
                 const extras = addonsForPackage(pkg);
                 return (
-                  <article key={pkg.slug} id={pkg.slug} className="sv-pkg reveal">
+                  <article key={pkg.slug} id={pkg.slug} className="sv-pkg" data-reveal="scale">
                     <header className="sv-pkg-head">
                       <div>
                         <h3 className="sv-pkg-name">{pkg.name}</h3>
@@ -157,7 +157,7 @@ export default function Services() {
                     )}
 
                     <Link
-                      to={`/book?package=${pkg.slug}`}
+                      to={`/booking?package=${pkg.slug}`}
                       className={`btn ${pkg.allowsDirectBooking ? 'btn-primary' : 'btn-secondary'} sv-pkg-cta`}
                     >
                       {pkg.allowsDirectBooking ? `Book a ${pkg.shortName.toLowerCase()} shoot` : 'Book a consultation'}
@@ -174,9 +174,9 @@ export default function Services() {
       {/* --- The rules that apply to everything --- */}
       <section className="section section-dark">
         <div className="wrap sv-rules-wrap">
-          <h2 className="section-title reveal">Deposit, travel and turnaround</h2>
+          <h2 className="section-title" data-reveal>Deposit, travel and turnaround</h2>
 
-          <div className="sv-rules stagger">
+          <div className="sv-rules" data-reveal="stagger">
             <div className="sv-rule">
               <h3>Deposit</h3>
               <p className="sv-rule-value">
@@ -214,7 +214,7 @@ export default function Services() {
             </div>
           </div>
 
-          <div className="sv-policy reveal">
+          <div className="sv-policy" data-reveal>
             <h3 className="sv-policy-title">{policy.headline}</h3>
             <ul>
               {policy.points.map((p) => (

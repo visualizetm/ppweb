@@ -28,7 +28,7 @@ export default function Contact() {
     <>
       <Seo
         title="Contact"
-        description="Get in touch with Paps Productions — cinematic automotive photography in Philadelphia and the Main Line."
+        description="Get in touch with Paps Productions — cinematic automotive photography in Delaware County, near Philadelphia."
       />
 
       <section className="ct-hero texture-trails">
@@ -53,7 +53,7 @@ export default function Contact() {
               No card, no commitment. Pick a time, tell me roughly what you have in mind, and we
               work out the rest on the call.
             </p>
-            <Link to="/book" className="btn btn-primary btn-lg">
+            <Link to="/booking" className="btn btn-primary btn-lg">
               Start a booking
               <ArrowRight className="arrow" width={17} height={17} aria-hidden="true" />
             </Link>

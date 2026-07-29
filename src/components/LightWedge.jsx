@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
    ---------------------------------------------------------------------------
    WHAT IT IS
 
-   A live readout of today's light in Philadelphia: night, blue hour, golden
+   A live readout of today's light in Delaware County: night, blue hour, golden
    hour, daylight, laid out left to right, with a needle on the current moment.
    It is real information, computed from the solar position (src/lib/sun.js),
    and it changes every minute of every day.

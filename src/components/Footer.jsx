@@ -82,7 +82,7 @@ export default function Footer() {
               Most shoots begin with a free consultation. No card, no commitment — we work out what
               the shoot actually needs first.
             </p>
-            <Link to="/book" className="btn btn-primary btn-sm">
+            <Link to="/booking" className="btn btn-primary btn-sm">
               Book a consultation
               <ArrowRight className="arrow" width={15} height={15} aria-hidden="true" />
             </Link>

@@ -21,14 +21,14 @@ export default function HowManyPhotos() {
     <>
       <section className="hmp section" aria-labelledby="hmp-title">
         <div className="wrap hmp-grid">
-          <div className="hmp-q reveal-left">
+          <div className="hmp-q" data-reveal="slide-left">
             <span className="hmp-label">The question everyone asks</span>
             <h2 id="hmp-title" className="hmp-title">
               {homepageFaq.question}
             </h2>
           </div>
 
-          <div className="hmp-a reveal-right">
+          <div className="hmp-a" data-reveal="slide-right">
             <p className="hmp-lead">{lead}</p>
             {rest.map((para) => (
               <p key={para.slice(0, 32)} className="hmp-para">

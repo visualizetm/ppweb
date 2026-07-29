@@ -37,7 +37,7 @@ export default function About() {
     <>
       <Seo
         title="Behind the Lens"
-        description={`About ${site.photographer} of ${site.name} — cinematic automotive photography across Philadelphia and the Main Line.`}
+        description={`About ${site.photographer} of ${site.name} — cinematic automotive photography across Delaware County and Philadelphia.`}
       />
 
       <section className="ab-hero texture-trails">
@@ -78,10 +78,10 @@ export default function About() {
 
       <section className="section section-dark">
         <div className="wrap">
-          <h2 className="section-title reveal">On location</h2>
-          <p className="section-subtitle reveal">{site.serviceArea.blurb}</p>
+          <h2 className="section-title" data-reveal>On location</h2>
+          <p className="section-subtitle" data-reveal>{site.serviceArea.blurb}</p>
 
-          <div className="ab-bts stagger">
+          <div className="ab-bts" data-reveal="stagger">
             {BTS.map((b) => (
               <figure key={b.src} className="ab-bts-item">
                 <Picture src={b.src} alt={b.alt} label={b.caption} className="ab-bts-img" />
@@ -94,8 +94,8 @@ export default function About() {
 
       <section className="section">
         <div className="wrap ab-beliefs-wrap">
-          <h2 className="section-title reveal">How I work</h2>
-          <ul className="ab-beliefs stagger">
+          <h2 className="section-title" data-reveal>How I work</h2>
+          <ul className="ab-beliefs" data-reveal="stagger">
             {BELIEFS.map((b) => (
               <li key={b.title} className="ab-belief">
                 <h3>{b.title}</h3>
@@ -104,8 +104,8 @@ export default function About() {
             ))}
           </ul>
 
-          <div className="ab-cta reveal">
-            <Link to="/book" className="btn btn-primary btn-lg">
+          <div className="ab-cta" data-reveal>
+            <Link to="/booking" className="btn btn-primary btn-lg">
               Book a consultation
               <ArrowRight className="arrow" width={17} height={17} aria-hidden="true" />
             </Link>

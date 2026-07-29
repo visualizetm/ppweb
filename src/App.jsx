@@ -16,7 +16,7 @@ const About = lazy(() => import('./pages/About'));
 const Services = lazy(() => import('./pages/Services'));
 const Faq = lazy(() => import('./pages/Faq'));
 const Contact = lazy(() => import('./pages/Contact'));
-const Book = lazy(() => import('./pages/Book'));
+const Booking = lazy(() => import('./pages/Booking'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Admin = lazy(() => import('./pages/admin/Admin'));
 
@@ -90,7 +90,7 @@ export default function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/book" element={<Book />} />
+            <Route path="/booking" element={<Booking />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

@@ -14,9 +14,9 @@ export const site = {
   photographer: 'Michael Pappas',
   tagline: 'Cinematic Automotive Photography',
   shortDescription:
-    'Cinematic automotive photography in Philadelphia and on the Main Line.',
+    'Cinematic automotive photography in Delaware County, just outside Philadelphia.',
   metaDescription:
-    'Cinematic automotive photography by Paps Productions. Solo, duo, group and event coverage across Philadelphia and the Main Line. Book a free consultation with Michael Pappas.',
+    'Cinematic automotive photography by Paps Productions. Solo, duo, group and event coverage across Delaware County and the wider Philadelphia area. Book a free consultation with Michael Pappas.',
 
   /* --- Contact -------------------------------------------------------------
      PLACEHOLDER: none of this is published anywhere on the current site.
@@ -49,11 +49,15 @@ export const site = {
   ],
 
   /* --- Where he works -------------------------------------------------------
-     PLACEHOLDER: radius and base are assumptions drawn from the gallery names
-     (Main Line Cars & Coffee, Collegeville). Confirm with Michael. */
+     Based in Delaware County, immediately west and south-west of Philadelphia.
+     PLACEHOLDER: the radius figures are still assumptions — confirm with
+     Michael. The county itself is small (about 20 miles across), so a 30-mile
+     radius already reaches Philadelphia, most of Chester County, and over the
+     bridges into New Jersey and Delaware. */
   serviceArea: {
-    base: 'Philadelphia & the Main Line, PA',
-    baseShort: 'Main Line, PA',
+    base: 'Delaware County, PA',
+    baseShort: 'Delaware County, PA',
+    baseLong: 'Delaware County, PA — and the wider Philadelphia area',
     freeRadiusMiles: 30, // PLACEHOLDER — not confirmed
     maxRadiusMiles: 90, // PLACEHOLDER — not confirmed
     blurb:
@@ -96,7 +100,7 @@ export const pricing = {
     isPlaceholder: true,
     label: 'Extended travel',
     description:
-      'Travel is included within 30 miles of the Main Line. Beyond that, one flat fee covers the drive — no per-mile arithmetic.',
+      'Travel is included within 30 miles of Delaware County. That already covers Philadelphia, most of Chester County and a good way into New Jersey. Beyond it, one flat fee covers the drive — no per-mile arithmetic.',
   },
 
   /* PLACEHOLDER: turnaround. */

@@ -13,7 +13,7 @@ export default function CtaBand() {
             Start with a free consultation. No card, no commitment — just a conversation about what
             the shoot should be.
           </p>
-          <Link to="/book" className="btn btn-primary btn-lg">
+          <Link to="/booking" className="btn btn-primary btn-lg">
             Book a consultation
             <ArrowRight className="arrow" width={17} height={17} aria-hidden="true" />
           </Link>

@@ -12,7 +12,7 @@ export default function Portfolio() {
     <>
       <Seo
         title="Portfolio"
-        description="Automotive photography galleries by Paps Productions — solo, duo, group and event coverage across Philadelphia and the Main Line."
+        description="Automotive photography galleries by Paps Productions — solo, duo, group and event coverage across Delaware County and Philadelphia."
       />
 
       <section className="pf-hero texture-trails">
@@ -52,7 +52,7 @@ export default function Portfolio() {
             Showing {shown.length} of {galleries.length} galleries
           </p>
 
-          <div className="pf-grid stagger">
+          <div className="pf-grid" data-reveal="stagger">
             {shown.map((g, i) => (
               <GalleryCard key={g.slug} gallery={g} eager={i < 3} />
             ))}

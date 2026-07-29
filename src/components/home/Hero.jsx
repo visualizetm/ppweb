@@ -69,7 +69,7 @@ export default function Hero() {
           <div className="hr-light plate">
             <div className="hr-light-head">
               <span className="plate-label">Light today</span>
-              <span className="plate-label hr-place">{light?.place || 'Philadelphia, PA'}</span>
+              <span className="plate-label hr-place">{light?.place || 'Delaware County, PA'}</span>
             </div>
 
             <LightWedge light={light} />
@@ -90,14 +90,14 @@ export default function Hero() {
               </h1>
 
               <p className="hr-sub">
-                I photograph cars around Philadelphia and the Main Line — on streets, in garages,
-                on back roads, at meets. Almost everything in the portfolio was shot inside the
-                bracketed strip above, and picking the right hour is most of why the photos look
-                the way they do.
+                I photograph cars around Delaware County and out into Philadelphia — on streets,
+                in garages, on back roads, at meets. Almost everything in the portfolio was shot
+                inside the bracketed strip above, and picking the right hour is most of why the
+                photos look the way they do.
               </p>
 
               <div className="hr-ctas">
-                <Link to="/book" className="btn btn-primary btn-lg">
+                <Link to="/booking" className="btn btn-primary btn-lg">
                   Book a shoot
                   <ArrowRight className="arrow" width={16} height={16} aria-hidden="true" />
                 </Link>
@@ -111,7 +111,7 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="hr-visual">
+            <div className="hr-visual" data-parallax="18">
               <Picture
                 src="/brand/hero"
                 /* Described from the actual image. Probably an Infiniti Q50 —

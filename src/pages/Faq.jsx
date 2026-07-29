@@ -65,7 +65,7 @@ export default function Faq() {
       <section className="section section-tight">
         <div className="wrap fq-wrap">
           {faqCategories.map((cat) => (
-            <div key={cat} className="fq-group reveal">
+            <div key={cat} className="fq-group" data-reveal>
               <h2 className="fq-cat">{cat}</h2>
               <ul className="fq-list">
                 {faqs
@@ -82,12 +82,12 @@ export default function Faq() {
             </div>
           ))}
 
-          <div className="fq-cta reveal">
+          <div className="fq-cta" data-reveal>
             <h2 className="fq-cta-title">Still have a question?</h2>
             <p className="fq-cta-sub">
               Book a free consultation and ask it there. No card, no commitment.
             </p>
-            <Link to="/book" className="btn btn-primary">
+            <Link to="/booking" className="btn btn-primary">
               Book a consultation
               <ArrowRight className="arrow" width={16} height={16} aria-hidden="true" />
             </Link>

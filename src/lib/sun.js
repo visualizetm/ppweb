@@ -1,7 +1,7 @@
 /* ===========================================================================
    Solar times.
    ---------------------------------------------------------------------------
-   Golden hour is not a fixed clock time. In Philadelphia, sunset moves by more
+   Golden hour is not a fixed clock time. In Delaware County, sunset moves by more
    than three hours across the year — hardcoding "6pm is golden hour" would be
    right in March and badly wrong in December, and this is a business where the
    light IS the product.
@@ -26,6 +26,8 @@ const ALT_HORIZON = -0.833;
 const ALT_GOLDEN = 6; // sun 6 degrees up — the usual end of usable golden light
 const ALT_BLUE = -4; // sun 4 degrees down — blue hour
 
+import { zonedNoon } from './tz';
+
 const toJulian = (date) => date.valueOf() / MS_PER_DAY + JULIAN_EPOCH_OFFSET;
 const fromJulian = (j) => new Date((j - JULIAN_EPOCH_OFFSET) * MS_PER_DAY);
 
@@ -46,14 +48,13 @@ export function sunTimes(date, lat, lon) {
   const lw = -lon; // west-positive longitude, as the equation expects
   const phi = lat * RAD;
 
-  /* Normalise to midday on the date's LOCAL calendar day. The caller passes a
-     Date that may sit anywhere in that day — including instants that fall on a
-     different UTC day — and picking the wrong solar day would return yesterday's
-     sunset. Anchoring to 12:00 UTC keeps the whole local day inside one solar
-     day for any longitude in the Americas. */
-  const anchored = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12)
-  );
+  /* Normalise to midday on the calendar day AT THE SHOOT LOCATION.
+
+     Using the runtime's local day was a real bug: for a visitor in UTC, an
+     8pm Philadelphia slot falls on the following UTC day, so the calculation
+     anchored to tomorrow and classified a golden-hour slot as "Night". The
+     shoot's own calendar day is the only correct anchor. */
+  const anchored = zonedNoon(date);
 
   /* Days since J2000, corrected for longitude. Solar noon happens LATER in UTC
      the further west you are — Philadelphia at 75.17W runs about 5 hours behind
