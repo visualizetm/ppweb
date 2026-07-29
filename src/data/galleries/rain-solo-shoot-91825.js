@@ -31,12 +31,27 @@ export default {
   featureOrder: 3,
 
   blurb:
-    'Rain is usually the reason a shoot gets moved. This one it was the reason to go out — wet asphalt turns every light source into a second light source.',
+    'Rain is usually the reason a shoot gets moved. Here it was the reason to go out. Water beads on a clean panel and every drop picks up whatever light is going, so a flat grey car in a downpour ends up with more texture than the same car on a dry day.',
 
   /* Cover recovered from the previous site (was Storage/Photos/IMG9.JPG). */
   cover: '/galleries/rain-solo-shoot-91825/cover',
-  coverAlt: 'Audi R8 city night',
-  coverAltUnverified: true,
+  /* VERIFIED by direct inspection of the image on 2026-07-29.
+     The old site labelled this "Audi R8 city night". It is not an R8, it is
+     not in a city, and it is not night — it is a grey hatchback in daylight
+     rain. All three of the old site's cover captions were wrong.
+
+     NOTE FOR MICHAEL: the rear window carries vinyl decals including a
+     personal Instagram handle belonging to the car's owner. It is legible in
+     the full-size image. Deliberately not transcribed into alt text — no
+     reason to republish someone's handle in a machine-readable field without
+     asking them. Worth a quick check that the owner is happy for this frame
+     to be the gallery cover at all. */
+  coverAlt:
+    'Rain beading across the rear quarter window and flank of a dark grey hatchback',
+
+  /* Sampled from the cover: no chromatic region at all. Correct — the frame is
+     genuinely greyscale. This is the clearest case for keeping paint null. */
+  paint: null,
 
   images: [],
   sourceUrl: 'https://mpappasproductions.myportfolio.com/rain-solo-shoot-91825',

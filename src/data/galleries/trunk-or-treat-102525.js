@@ -17,6 +17,11 @@ export default {
   cover: null,
   coverAlt: '',
 
+  /* No cover yet, so nothing to sample. Set a hex here once a cover lands and
+     scripts/sample-paint.mjs finds a chromatic region, or paste a real paint
+     code if Michael supplies one. */
+  paint: null,
+
   images: [],
   sourceUrl: 'https://mpappasproductions.myportfolio.com/trunk-or-treat-102525',
 };
