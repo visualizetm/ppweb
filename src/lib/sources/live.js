@@ -91,22 +91,25 @@ export const markAllRead = () =>
 
 export const getBookedSlots = () => call('/api/availability');
 
-/* -------------------------------------------------------------- payments -- */
-/* These three hit the server, which holds STRIPE_SECRET_KEY. The secret key
-   never reaches the browser and is never given a VITE_ prefix. The browser only
-   ever sees a client secret scoped to one payment intent. */
+/* -------------------------------------------------------------- invoices -- */
+/* These hit the server, which holds STRIPE_SECRET_KEY. The secret key never
+   reaches the browser and is never given a VITE_ prefix. */
 
-export const createCheckout = ({ bookingId, amountCents }) =>
-  call('/api/payments/create-intent', { method: 'POST', body: { bookingId, amountCents } });
+export const createInvoice = (body) =>
+  call('/api/admin/invoices', { method: 'POST', body });
 
-export const confirmPayment = ({ bookingId, intentId, paymentMethodId }) =>
-  call('/api/payments/confirm', {
-    method: 'POST',
-    body: { bookingId, intentId, paymentMethodId },
-  });
+export const getInvoice = (id) => call(`/api/invoices${qs({ id })}`);
 
-export const getPaymentStatus = (bookingId) =>
-  call(`/api/payments/status${qs({ bookingId })}`);
+export const markInvoiceViewed = (id) =>
+  call('/api/invoices/viewed', { method: 'POST', body: { id } });
+
+export const payInvoice = ({ invoiceId, paymentMethodId }) =>
+  call('/api/invoices/pay', { method: 'POST', body: { invoiceId, paymentMethodId } });
+
+export const voidInvoice = (id) =>
+  call('/api/admin/invoices', { method: 'PATCH', body: { id, void: true } });
+
+export const listInvoices = () => call('/api/admin/invoices');
 
 /* Test cards are a demo-only affordance. Exported empty so any component that
    reads it renders nothing in production without needing an isDemo check. */

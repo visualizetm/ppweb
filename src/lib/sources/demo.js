@@ -11,6 +11,7 @@
 
 import { buildSeed, buildInquiryFeed } from '../demoSeed';
 import { pricing } from '../../data/site';
+import { invoiceState } from '../invoiceToken';
 
 const STORAGE_KEY = 'pp_demo_state_v1';
 const SESSION_KEY = 'pp_demo_session_v1';
@@ -278,14 +279,15 @@ export async function getBookedSlots() {
 }
 
 /* =========================================================================
-   Payments — fully stubbed
+   Invoices — fully stubbed
    -------------------------------------------------------------------------
-   NO Stripe SDK is loaded. NO key of any kind exists in this build. NO network
-   request is made. These three functions exist so that the real
-   implementation in live.js is a drop-in replacement and the UI never changes.
+   NO Stripe SDK is loaded. NO key exists in this build. NO network request is
+   made. These functions exist so the real implementation is a drop-in swap and
+   the UI never changes.
 
-   The card numbers below are Stripe's published test numbers, used here purely
-   as a switch to demonstrate the success and failure paths.
+   The real-world analogue is Stripe Invoicing or Payment Links, which do
+   exactly this natively — so production is mostly deleting these stubs, not
+   building a payment system. See DEMO-TO-PRODUCTION.md.
    ========================================================================= */
 
 export const DEMO_TEST_CARDS = [
@@ -295,86 +297,115 @@ export const DEMO_TEST_CARDS = [
 
 const digitsOnly = (s = '') => s.replace(/\D/g, '');
 
-export async function createCheckout({ bookingId, amountCents }) {
-  await wait(500);
-  const intentId = `pi_demo_${nextId('x').split('_')[1]}`;
-  return {
-    ok: true,
-    demo: true,
-    intent: {
-      id: intentId,
-      bookingId,
-      amountCents: amountCents ?? pricing.depositCents,
-      status: 'requires_payment_method',
-      /* A real client secret never reaches the browser in this shape; this is
-         a clearly-labelled demo string so nothing can mistake it for one. */
-      clientSecret: `${intentId}_secret_demo_only`,
-    },
+export async function createInvoice({ bookingId, lines, kind = 'deposit', dueDate, title }) {
+  await wait(LATENCY.write);
+
+  const index = state.bookings.findIndex((b) => b.id === bookingId);
+  if (index === -1) return { ok: false, error: 'not_found' };
+  const booking = state.bookings[index];
+
+  const totalCents = (lines || []).reduce(
+    (sum, l) => sum + (Number(l.amountCents) || 0) * (Number(l.quantity) || 1),
+    0
+  );
+
+  const seq = state.bookings.reduce((n, b) => n + (b.invoices?.length || 0), 0) + 1;
+
+  const invoice = {
+    id: nextId('inv'),
+    number: `INV-${String(2400 + seq)}`,
+    bookingId,
+    title: title || booking.title,
+    customerName: booking.contact.name,
+    customerEmail: booking.contact.email,
+    lines: lines || [],
+    kind,
+    dueDate: dueDate || null,
+    totalCents,
+    amountDueCents: totalCents,
+    policy: null,
+    issuedAt: new Date().toISOString(),
   };
+
+  state.bookings[index] = {
+    ...booking,
+    invoices: [...(booking.invoices || []), invoice],
+    status: booking.status === 'new' || booking.status === 'reviewing' ? 'quote sent' : booking.status,
+    updatedAt: new Date().toISOString(),
+  };
+  persist();
+
+  return { ok: true, invoice: clone(invoice) };
 }
 
-export async function confirmPayment({ bookingId, intentId, card = {}, billingName = '' }) {
+export async function getInvoice(id) {
+  await wait(LATENCY.read);
+  for (const b of state.bookings) {
+    const found = (b.invoices || []).find((i) => i.id === id);
+    if (found) return { ok: true, invoice: clone(found), state: invoiceState.get(id) };
+  }
+  return { ok: false, error: 'not_found' };
+}
+
+export async function markInvoiceViewed(id) {
+  /* No artificial delay — this fires on page load and must not make the
+     invoice feel slow to the customer. */
+  return { ok: true, state: invoiceState.markViewed(id) };
+}
+
+export async function payInvoice({ invoiceId, card = {}, billingName = '' }) {
   await wait(LATENCY.payment);
 
   const number = digitsOnly(card.number);
-  const declined = number === '4000000000000002';
-
-  if (declined) {
+  if (number === '4000000000000002') {
     return {
       ok: false,
       demo: true,
       error: 'card_declined',
-      message: 'Your card was declined. Try a different card, or contact your bank.',
+      message:
+        'Your card was declined. Nothing has been charged — try another card, or get in touch and we will sort it out.',
     };
   }
 
-  /* Anything that is not the declining test card succeeds, so a client poking
-     at the demo cannot get stuck on a validation dead end. */
-  const last4 = number.slice(-4) || '4242';
-  const paidAt = new Date().toISOString();
-  const receiptRef = `rcpt_demo_${Date.now().toString(36)}`;
+  const payment = {
+    intentId: `pi_demo_${Date.now().toString(36)}`,
+    receiptRef: `rcpt_demo_${Math.random().toString(36).slice(2, 10)}`,
+    brand: card.brand || 'visa',
+    last4: number.slice(-4) || '4242',
+    billingName,
+  };
 
-  const index = state.bookings.findIndex((b) => b.id === bookingId);
+  const saved = invoiceState.markPaid(invoiceId, payment);
+
+  /* Move the booking along. Paying a deposit is what schedules a shoot. */
+  const index = state.bookings.findIndex((b) => (b.invoices || []).some((i) => i.id === invoiceId));
   if (index !== -1) {
+    const b = state.bookings[index];
     state.bookings[index] = {
-      ...state.bookings[index],
-      status: 'deposit-paid',
-      updatedAt: paidAt,
-      payment: {
-        status: 'succeeded',
-        intentId: intentId || `pi_demo_${Date.now().toString(36)}`,
-        amountCents: state.bookings[index].pricing?.depositCents ?? pricing.depositCents,
-        brand: card.brand || 'visa',
-        last4,
-        billingName,
-        paidAt,
-        receiptRef,
-      },
+      ...b,
+      status: ['new', 'reviewing', 'quote sent'].includes(b.status) ? 'deposit paid' : b.status,
+      updatedAt: new Date().toISOString(),
     };
     persist();
   }
 
-  return {
-    ok: true,
-    demo: true,
-    payment: {
-      status: 'succeeded',
-      intentId: intentId || `pi_demo_${Date.now().toString(36)}`,
-      amountCents: pricing.depositCents,
-      brand: card.brand || 'visa',
-      last4,
-      billingName,
-      paidAt,
-      receiptRef,
-    },
-  };
+  return { ok: true, demo: true, payment: { ...payment, ...saved } };
 }
 
-export async function getPaymentStatus(bookingId) {
+export async function voidInvoice(id) {
+  await wait(300);
+  return { ok: true, state: invoiceState.markVoid(id) };
+}
+
+export async function listInvoices() {
   await wait(LATENCY.read);
-  const found = state.bookings.find((b) => b.id === bookingId);
-  if (!found) return { ok: false, error: 'not_found' };
-  return { ok: true, payment: found.payment ? clone(found.payment) : null };
+  const out = [];
+  for (const b of state.bookings) {
+    for (const inv of b.invoices || []) {
+      out.push({ ...clone(inv), booking: { id: b.id, ref: b.ref, title: b.title }, state: invoiceState.get(inv.id) });
+    }
+  }
+  return { ok: true, items: out.sort((a, b) => new Date(b.issuedAt) - new Date(a.issuedAt)) };
 }
 
 /* =========================================================================
@@ -487,6 +518,10 @@ export async function resetDemoData() {
   await wait(400);
   state = freshState();
   persist();
+  /* Invoice payment status lives in a separate localStorage namespace so a
+     copied link survives across tabs — reset has to clear that too, or paid
+     invoices from a previous run come back from the dead. */
+  invoiceState.reset();
   return { ok: true };
 }
 

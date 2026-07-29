@@ -48,10 +48,13 @@ export const {
   markAllRead,
   /* availability */
   getBookedSlots,
-  /* payments */
-  createCheckout,
-  confirmPayment,
-  getPaymentStatus,
+  /* invoices */
+  createInvoice,
+  getInvoice,
+  markInvoiceViewed,
+  payInvoice,
+  voidInvoice,
+  listInvoices,
   DEMO_TEST_CARDS,
   /* dashboard */
   getDashboardStats,

@@ -19,6 +19,7 @@ const Contact = lazy(() => import('./pages/Contact'));
 const Booking = lazy(() => import('./pages/Booking'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Admin = lazy(() => import('./pages/admin/Admin'));
+const Invoice = lazy(() => import('./pages/Invoice'));
 
 function RouteFallback() {
   return (
@@ -62,12 +63,16 @@ export default function App() {
   /* The dashboard is a different product from the marketing site and gets none
      of its chrome — no navbar, no footer, no page max-width. */
   const isAdmin = pathname.startsWith('/admin');
+  /* An invoice is opened cold from a link. Someone paying is not browsing a
+     portfolio, so it gets none of the marketing chrome either. */
+  const isInvoice = pathname.startsWith('/invoice');
 
-  if (isAdmin) {
+  if (isAdmin || isInvoice) {
     return (
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/admin/*" element={<Admin />} />
+          <Route path="/invoice/:token" element={<Invoice />} />
         </Routes>
         <DemoBadge />
       </Suspense>
