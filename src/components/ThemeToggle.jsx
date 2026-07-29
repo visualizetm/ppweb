@@ -66,13 +66,13 @@ export default function ThemeToggle({ className = '' }) {
         .tt {
           display: grid;
           place-items: center;
-          width: 38px;
-          height: 38px;
+          width: 36px;
+          height: 36px;
           flex: none;
-          border-radius: 50%;
-          border: 1px solid var(--border-light);
-          background: var(--glass-bg);
-          color: var(--text-secondary);
+          border-radius: var(--radius);
+          border: 1px solid var(--edge-strong);
+          background: var(--panel);
+          color: var(--ink-soft);
           transition: background-color var(--duration-fast) var(--ease),
             color var(--duration-fast) var(--ease),
             border-color var(--duration-fast) var(--ease),
@@ -80,9 +80,8 @@ export default function ThemeToggle({ className = '' }) {
         }
 
         .tt:hover {
-          background: var(--hover-strong);
-          color: var(--text);
-          border-color: var(--glass-border-brand);
+          background: var(--panel-high);
+          color: var(--ink);
           transform: translateY(-1px);
         }
 

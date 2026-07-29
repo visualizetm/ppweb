@@ -23,10 +23,11 @@
    ONE COMPROMISE, STATED PLAINLY
 
    True 18% grey is about #767676 in sRGB. At that value the ink ramp lands
-   near 4.1:1 and fails AA. --ground is #A9ACB6 — Nardo Grey, a real paint
-   code, and light enough to carry a legible ink ramp. The concept is intact
-   and the legibility is real. This comment exists so nobody later "corrects"
-   the ground back toward #767676 and quietly breaks every text pair.
+   near 4.1:1 and fails AA. --ground is #A9ABB2 — Nardo Grey (#A9ACB6, a real
+   paint code) pulled a couple of points off blue, because on screen the true
+   value read faintly violet. Light enough to carry a legible ink ramp, cool
+   enough to sit under warm photographs. This comment exists so nobody later
+   "corrects" the ground back toward #767676 and quietly breaks every pair.
 
    CONTRAST IS VERIFIED, NOT ASSERTED
 
@@ -107,11 +108,11 @@ h6 {
    not dark-first, and that is a deliberate reversal of the previous build. */
 :root {
   /* --- Ground: the card itself -------------------------------------------- */
-  --ground: #a9acb6;
-  --ground-deep: #a3a6b0; /* recessed bands, alternating sections */
-  --ground-sunk: #a3a6b0; /* deepest — footer, wells */
-  --panel: #bec1c9; /* raised surfaces, spec plates, cards */
-  --panel-high: #cccfd5; /* the most raised surface */
+  --ground: #a9abb2;
+  --ground-deep: #a3a5ac; /* recessed bands, alternating sections */
+  --ground-sunk: #a3a5ac; /* deepest — footer, wells */
+  --panel: #bec0c6; /* raised surfaces, spec plates, cards */
+  --panel-high: #ccced3; /* the most raised surface */
 
   /* --- Ink ---------------------------------------------------------------- */
   --ink: #14161a; /* headings, stamped type */
