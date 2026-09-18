@@ -520,6 +520,9 @@ function sanitizeField(field, value) {
         .map((img) => ({
           url: safeUrl(img?.url, 600),
           alt: str(img?.alt, 300),
+          /* Cloudinary asset id, kept so a removed photograph can be destroyed
+             in storage rather than left behind. Empty for committed images. */
+          publicId: str(img?.publicId, 200),
         }))
         .filter((img) => img.url);
     }
@@ -601,4 +604,25 @@ export function changedFields(sectionId, draft, published) {
 
 export function sectionIsDirty(sectionId, draft, published) {
   return changedFields(sectionId, draft, published).length > 0;
+}
+
+/* ===========================================================================
+   Image URLs inside a content value.
+   ---------------------------------------------------------------------------
+   Walks any section value and returns the set of Cloudinary delivery URLs it
+   references, whatever key they sit under. Used in the dashboard to decide
+   whether a removed image is still live (and so must not be destroyed yet),
+   and at publish time to destroy assets nothing references any more.
+   =========================================================================== */
+export const CLOUDINARY_PREFIX = 'https://res.cloudinary.com/';
+
+export function collectImageUrls(value, out = new Set()) {
+  if (typeof value === 'string') {
+    if (value.startsWith(CLOUDINARY_PREFIX)) out.add(value);
+  } else if (Array.isArray(value)) {
+    value.forEach((v) => collectImageUrls(v, out));
+  } else if (value && typeof value === 'object') {
+    Object.values(value).forEach((v) => collectImageUrls(v, out));
+  }
+  return out;
 }

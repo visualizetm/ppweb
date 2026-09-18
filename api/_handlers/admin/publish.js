@@ -1,7 +1,9 @@
 import { siteContent, publishHistory } from '../../_lib/mongo.js';
 import { requireAdmin } from '../../_lib/auth.js';
 import { readAllSections } from '../../_lib/content.js';
-import { getSection, changedFields } from '../../../shared/content-schema.js';
+import { getSection, changedFields, collectImageUrls } from '../../../shared/content-schema.js';
+import { v2 as cloudinary } from 'cloudinary';
+import { configure as cloudinaryReady, publicIdFromUrl } from './upload.js';
 
 /* ===========================================================================
    Publish.
@@ -61,6 +63,11 @@ export default async function handler(req, res) {
     const col = await siteContent();
     const now = new Date();
 
+    /* Images that were live before this publish. Anything in here that is
+       referenced by nothing afterwards is destroyed in storage below. */
+    const wasLive = new Set();
+    publishing.forEach((row) => collectImageUrls(byId.get(row.section).published, wasLive));
+
     /* Sequential rather than bulk so a single bad section cannot silently
        take the rest of the publish down with it. Nine sections at most. */
     for (const row of publishing) {
@@ -69,6 +76,31 @@ export default async function handler(req, res) {
         { section: row.section },
         { $set: { published: current.draft, publishedAt: now, updatedAt: now } }
       );
+    }
+
+    /* Retire assets nothing references any more: not this or any other
+       section's published copy, and not any draft either (a draft may still
+       be holding an image for a later publish). Failures here are logged and
+       never fail the publish; an orphaned file is a cost, a lost publish is
+       not. */
+    let destroyed = 0;
+    if (wasLive.size && cloudinaryReady()) {
+      const stillUsed = new Set();
+      (await readAllSections()).forEach((row) => {
+        collectImageUrls(row.published, stillUsed);
+        collectImageUrls(row.draft, stillUsed);
+      });
+      for (const url of wasLive) {
+        if (stillUsed.has(url)) continue;
+        const publicId = publicIdFromUrl(url);
+        if (!publicId) continue;
+        try {
+          await cloudinary.uploader.destroy(publicId, { resource_type: 'image', invalidate: true });
+          destroyed += 1;
+        } catch (err) {
+          console.error('[publish] could not destroy', publicId, err?.message);
+        }
+      }
     }
 
     const history = await publishHistory();
@@ -89,6 +121,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       published: publishing.map((r) => r.section),
+      destroyed,
       entry: { ...entry, id: String(insertedId) },
     });
   }

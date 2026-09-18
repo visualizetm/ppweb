@@ -1,66 +1,86 @@
-import { put, del } from '@vercel/blob';
+import { v2 as cloudinary } from 'cloudinary';
 import { requireAdmin } from '../../_lib/auth.js';
 
 /* ===========================================================================
-   Image upload.
+   Image upload and removal, backed by Cloudinary.
    ---------------------------------------------------------------------------
-   Admin only. Takes RAW IMAGE BYTES as the request body rather than multipart:
-   the browser has already resized and re-encoded the file, so there is nothing
-   else in the payload and multipart would only add a parser to get wrong.
+   Admin only. POST takes RAW IMAGE BYTES as the body rather than multipart:
+   the browser has already resized and re-encoded the file, so there is
+   nothing else in the payload. DELETE takes a public_id (or a URL to derive
+   it from) and destroys the asset so removed images do not pile up.
 
    Vercel caps a serverless request body at 4.5 MB. The client resizes to well
-   under that before it ever gets here (see src/lib/imageResize.js), and the
-   check below turns the platform's opaque failure into a readable message.
+   under that before it ever gets here (src/lib/imageResize.js).
    =========================================================================== */
 
 const MAX_BYTES = 4 * 1024 * 1024;
+const ROOT_FOLDER = 'papsprod';
 
-const TYPES = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/avif': 'avif',
-};
-
+const TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif' };
 const FOLDERS = ['galleries', 'brand', 'about', 'uploads'];
 
-/** Strips anything that could climb out of the folder or confuse a CDN path. */
+/** Strips anything that could climb out of the folder or confuse a path. */
 const slugify = (s, fallback) => {
-  const out = String(s ?? '')
-    .toLowerCase()
-    .replace(/\.[a-z0-9]+$/i, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60);
+  const out = String(s ?? '').toLowerCase().replace(/\.[a-z0-9]+$/i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
   return out || fallback;
 };
+
+/* Either credential style. CLOUDINARY_URL wins; the SDK reads it from the
+   environment on its own, so config() only needs to add `secure`. */
+export function configure() {
+  if (process.env.CLOUDINARY_URL) {
+    cloudinary.config({ secure: true });
+    return true;
+  }
+  const cloud_name = process.env.CLOUDINARY_CLOUD_NAME;
+  const api_key = process.env.CLOUDINARY_API_KEY;
+  const api_secret = process.env.CLOUDINARY_API_SECRET;
+  if (cloud_name && api_key && api_secret) {
+    cloudinary.config({ cloud_name, api_key, api_secret, secure: true });
+    return true;
+  }
+  return false;
+}
+
+/** The public_id inside one of our own delivery URLs, or null for anything
+    that is not ours (a /public path, someone else's host, the wrong root). */
+export function publicIdFromUrl(url) {
+  const m = /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/(?:[^/]+\/)*?(?:v\d+\/)?(.+?)\.[a-z0-9]+$/i.exec(String(url || ''));
+  if (!m) return null;
+  return m[1].startsWith(`${ROOT_FOLDER}/`) ? m[1] : null;
+}
+
+/** Plain-language mapping of a Cloudinary failure, without echoing its body. */
+function describe(err) {
+  const code = err?.http_code || err?.error?.http_code;
+  if (code === 401 || code === 403) return { status: 503, error: 'cloudinary_auth', message: 'Cloudinary rejected the credentials. Check CLOUDINARY_URL or the cloud name, API key and secret in Vercel.' };
+  if (code === 420 || code === 429) return { status: 503, error: 'cloudinary_rate_limited', message: 'Cloudinary is rate limiting uploads. Wait a minute and try again.' };
+  if (code === 400) return { status: 400, error: 'cloudinary_rejected', message: 'Cloudinary rejected that file. Make sure it is a JPEG, PNG or WebP image.' };
+  return { status: 502, error: 'upload_failed', message: 'Image storage did not accept that upload. Try again in a moment.' };
+}
 
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return;
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!configure()) {
     return res.status(503).json({
-      error: 'blob_not_configured',
-      message:
-        'Image storage is not connected yet. Add a Blob store to this project in Vercel and redeploy.',
+      error: 'cloudinary_not_configured',
+      message: 'Image storage is not connected yet. Add CLOUDINARY_URL (or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET) to the project in Vercel and redeploy.',
     });
   }
 
   /* ------------------------------------------------------------ DELETE -- */
   if (req.method === 'DELETE') {
-    const url = req.body?.url;
-    if (!url || typeof url !== 'string') return res.status(400).json({ error: 'url_required' });
-    /* Only ever deletes from our own store. A URL pointing anywhere else is
-       either a local /public path or someone else's file; neither is ours to
-       remove, and both are a no-op rather than an error. */
-    if (!/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i.test(url)) {
-      return res.status(200).json({ ok: true, skipped: 'not_a_blob_url' });
-    }
+    const given = typeof req.body?.publicId === 'string' ? req.body.publicId : null;
+    const publicId = given && given.startsWith(`${ROOT_FOLDER}/`) ? given : publicIdFromUrl(req.body?.url);
+    /* Not ours to remove: a local /public path, or a URL from elsewhere. */
+    if (!publicId) return res.status(200).json({ ok: true, skipped: 'not_ours' });
     try {
-      await del(url);
-      return res.status(200).json({ ok: true });
+      const r = await cloudinary.uploader.destroy(publicId, { resource_type: 'image', invalidate: true });
+      return res.status(200).json({ ok: true, result: r?.result || 'ok', publicId });
     } catch (err) {
-      return res.status(200).json({ ok: true, skipped: 'already_gone' });
+      const d = describe(err);
+      return res.status(d.status).json({ error: d.error, message: d.message });
     }
   }
 
@@ -68,51 +88,41 @@ export default async function handler(req, res) {
 
   /* -------------------------------------------------------------- POST -- */
   const contentType = String(req.headers['content-type'] || '').split(';')[0].trim();
-  const ext = TYPES[contentType];
-  if (!ext) {
-    return res.status(415).json({
-      error: 'unsupported_type',
-      message: 'Upload a JPEG, PNG, WebP or AVIF image.',
-    });
+  if (!TYPES[contentType]) {
+    return res.status(415).json({ error: 'unsupported_type', message: 'Upload a JPEG, PNG, WebP or AVIF image.' });
   }
 
   const body = await readBody(req);
-  if (!body || !body.length) {
-    return res.status(400).json({ error: 'empty_body', message: 'That file came through empty.' });
-  }
+  if (!body || !body.length) return res.status(400).json({ error: 'empty_body', message: 'That file came through empty.' });
   if (body.length > MAX_BYTES) {
-    return res.status(413).json({
-      error: 'too_large',
-      message: 'That image is too large even after resizing. Try a smaller original.',
-    });
+    return res.status(413).json({ error: 'too_large', message: 'That image is too large even after resizing. Try a smaller original.' });
   }
 
   const folder = FOLDERS.includes(req.query?.folder) ? req.query.folder : 'uploads';
   const name = slugify(req.query?.name, 'image');
-  /* addRandomSuffix keeps two uploads of "cover.jpg" from overwriting each
-     other, which matters because replacing a gallery cover is a common action
-     and the old one may still be the published version. */
-  const pathname = `${folder}/${name}.${ext}`;
+  /* Our own suffix so two uploads of "cover" never overwrite each other; the
+     old one may still be the published version. */
+  const suffix = Math.random().toString(36).slice(2, 8);
 
   try {
-    const blob = await put(pathname, body, {
-      access: 'public',
-      contentType,
-      addRandomSuffix: true,
-      cacheControlMaxAge: 31536000,
+    const result = await cloudinary.uploader.upload(`data:${contentType};base64,${body.toString('base64')}`, {
+      folder: `${ROOT_FOLDER}/${folder}`,
+      public_id: `${name}-${suffix}`,
+      resource_type: 'image',
+      overwrite: false,
     });
 
     return res.status(200).json({
       ok: true,
-      url: blob.url,
-      pathname: blob.pathname,
-      bytes: body.length,
+      url: result.secure_url,
+      publicId: result.public_id,
+      bytes: result.bytes || body.length,
+      width: result.width,
+      height: result.height,
     });
   } catch (err) {
-    return res.status(502).json({
-      error: 'upload_failed',
-      message: 'Image storage rejected that upload. Try again in a moment.',
-    });
+    const d = describe(err);
+    return res.status(d.status).json({ error: d.error, message: d.message });
   }
 }
 
@@ -121,7 +131,6 @@ export default async function handler(req, res) {
 async function readBody(req) {
   if (Buffer.isBuffer(req.body)) return req.body;
   if (typeof req.body === 'string') return Buffer.from(req.body, 'binary');
-
   const chunks = [];
   let total = 0;
   for await (const chunk of req) {

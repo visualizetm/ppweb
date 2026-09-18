@@ -374,6 +374,39 @@ export default function ContentStyles() {
       .cf-thumb-add:hover { color: var(--text); border-color: var(--border-light); }
       .cf-thumb-add input { display: none; }
 
+      /* --- upload batch ------------------------------------------------ */
+      .cf-batch {
+        display: grid; gap: var(--space-3);
+        padding: var(--space-3);
+        border: 1px solid var(--border-light); border-radius: var(--radius);
+        background: var(--bg-elevated);
+      }
+      .cf-batch-head {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2);
+      }
+      .cf-batch-summary { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 0.82rem; font-weight: 600; color: var(--text); }
+      .cf-batch-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+      .cf-jobs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); max-height: 320px; overflow-y: auto; }
+      .cf-job {
+        display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
+        padding: var(--space-2); border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border);
+      }
+      .cf-job-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 2px; background: var(--bg-deep); }
+      .cf-job-main { display: grid; gap: 3px; min-width: 0; }
+      .cf-job-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; font-weight: 600; color: var(--text); }
+      .cf-job-meta { font-size: 0.74rem; color: var(--text-muted); line-height: 1.4; overflow-wrap: anywhere; }
+      .cf-job-failed .cf-job-meta { color: var(--alert-ink); }
+      .cf-job-failed { border-color: var(--alert-ink); }
+      .cf-job-done .cf-job-side { color: var(--ok-ink); }
+      .cf-job-side { display: flex; align-items: center; gap: 2px; color: var(--text-muted); }
+
+      .cf-job-bar { display: block; height: 4px; border-radius: 2px; background: var(--bg-deep); overflow: hidden; }
+      .cf-job-fill { display: block; height: 100%; background: var(--brand); transition: width 120ms linear; }
+      .cf-img-bar { margin-top: var(--space-1); }
+
+      .cf-thumb-drop { border-color: var(--brand); color: var(--text); background: var(--glass-bg-brand); }
+
       /* --- gallery list ----------------------------------------------- */
       .cf-detail-head { min-width: 0; }
 

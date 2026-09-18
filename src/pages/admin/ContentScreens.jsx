@@ -11,7 +11,7 @@ import Loading01 from '@untitled-ui/icons-react/build/esm/Loading01';
 
 import { Field, ImageList } from './ContentFields';
 import ImageField, { directSrc } from './ImageField';
-import { getSection } from '../../../shared/content-schema.js';
+import { getSection, collectImageUrls } from '../../../shared/content-schema.js';
 import { relativeTime } from '../../lib/format';
 
 /* ===========================================================================
@@ -23,14 +23,54 @@ import { relativeTime } from '../../lib/format';
    and the publish history.
    =========================================================================== */
 
+/* ============================================================ skeletons === */
+/* One rule across the dashboard: a SKELETON where content is still loading,
+   a SPINNER on a button whose action is in flight. Both reuse the shimmer
+   already used by the stat cards, so nothing new is introduced visually. */
+
+export function SkeletonForm({ title }) {
+  return (
+    <>
+      <header className="ad-head">
+        <div>
+          <h1 className="ad-title">{title || <span className="ad-skel ad-skel-line" style={{ width: '10ch' }} />}</h1>
+          <span className="ad-skel ad-skel-line" style={{ width: '60%' }} />
+        </div>
+      </header>
+      <div className="cf-form" aria-busy="true" aria-label="Loading">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="cf-row">
+            <span className="ad-skel ad-skel-line" style={{ width: '22%' }} />
+            <span className="ad-skel ad-skel-block" />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function SkeletonRows({ count = 3, tall = false }) {
+  return (
+    <div className="ad-skel-rows" aria-busy="true" aria-label="Loading">
+      {Array.from({ length: count }, (_, i) => (
+        <span key={i} className={`ad-skel ad-skel-row ${tall ? 'ad-skel-row-tall' : ''}`} />
+      ))}
+    </div>
+  );
+}
+
 /* ====================================================== section editor === */
 
-export function SectionEditor({ sectionId, row, onChange, onRevert, saving, saveError }) {
+export function SectionEditor({ sectionId, row, onChange, onRevert, saving, saveError, reverting }) {
   const section = getSection(sectionId);
-  if (!section || !row) return null;
+  /* Hooks run before the bail-out so their order is stable while loading. */
+  const publishedUrls = useMemo(() => collectImageUrls(row?.published), [row?.published]);
+  if (!section) return null;
+  if (!row) return <SkeletonForm title={section.label} />;
 
   const draft = row.draft || {};
   const dirty = Boolean(row.changed?.length);
+  const isReverting = reverting === sectionId;
 
   return (
     <>
@@ -54,8 +94,9 @@ export function SectionEditor({ sectionId, row, onChange, onRevert, saving, save
             <AlertCircle width={15} height={15} aria-hidden="true" />
             Unpublished changes: {row.changed.join(', ')}
           </span>
-          <button type="button" className="cf-btn cf-btn-quiet" onClick={() => onRevert(sectionId)}>
-            Discard them
+          <button type="button" className="cf-btn cf-btn-quiet" onClick={() => onRevert(sectionId)} disabled={isReverting}>
+            {isReverting ? <Loading01 className="cf-spin" width={13} height={13} aria-hidden="true" /> : null}
+            {isReverting ? 'Discarding' : 'Discard them'}
           </button>
         </div>
       )}
@@ -68,6 +109,7 @@ export function SectionEditor({ sectionId, row, onChange, onRevert, saving, save
             value={draft[field.key]}
             onChange={(v) => onChange({ ...draft, [field.key]: v })}
             idPrefix={`cf-${sectionId}`}
+            publishedUrls={publishedUrls}
           />
         ))}
       </div>
@@ -102,12 +144,16 @@ function SaveState({ saving, dirty, failed }) {
 
 /* ====================================================== gallery editor === */
 
-export function GalleriesEditor({ row, onChange, onRevert, saving, saveError, onSay }) {
+export function GalleriesEditor({ row, onChange, onRevert, saving, saveError, reverting, onSay }) {
   const [openIndex, setOpenIndex] = useState(null);
 
   const draft = row?.draft || { items: [] };
   const items = useMemo(() => (Array.isArray(draft.items) ? draft.items : []), [draft.items]);
+  const publishedUrls = useMemo(() => collectImageUrls(row?.published), [row?.published]);
   const dirty = Boolean(row?.changed?.length);
+  const isReverting = reverting === 'galleries';
+
+  if (!row) return <SkeletonForm title="Galleries" />;
 
   const section = getSection('galleries');
   const itemFields = section.fields[0].fields;
@@ -185,6 +231,7 @@ export function GalleriesEditor({ row, onChange, onRevert, saving, saveError, on
                 value={gallery[field.key]}
                 onChange={(v) => patch(field.key, v)}
                 idPrefix={`gal-${openIndex}`}
+                publishedUrls={publishedUrls}
               />
             ))}
 
@@ -194,6 +241,7 @@ export function GalleriesEditor({ row, onChange, onRevert, saving, saveError, on
             onChange={(v) => patch('images', v)}
             folder="galleries"
             name={gallery.slug || 'photo'}
+            publishedUrls={publishedUrls}
           />
         </div>
       </>
@@ -234,8 +282,9 @@ export function GalleriesEditor({ row, onChange, onRevert, saving, saveError, on
             <AlertCircle width={15} height={15} aria-hidden="true" />
             Unpublished changes: {row.changed.join(', ')}
           </span>
-          <button type="button" className="cf-btn cf-btn-quiet" onClick={() => onRevert('galleries')}>
-            Discard them
+          <button type="button" className="cf-btn cf-btn-quiet" onClick={() => onRevert('galleries')} disabled={isReverting}>
+            {isReverting ? <Loading01 className="cf-spin" width={13} height={13} aria-hidden="true" /> : null}
+            {isReverting ? 'Discarding' : 'Discard them'}
           </button>
         </div>
       )}
@@ -386,7 +435,7 @@ export function PublishDialog({ pending, onCancel, onConfirm }) {
 
 /* ====================================================== publish history === */
 
-export function PublishHistoryView({ history }) {
+export function PublishHistoryView({ history, loading }) {
   return (
     <>
       <header className="ad-head">
@@ -398,7 +447,9 @@ export function PublishHistoryView({ history }) {
         </div>
       </header>
 
-      {!history.length ? (
+      {loading ? (
+        <SkeletonRows count={4} tall />
+      ) : !history.length ? (
         <div className="ad-empty ad-empty-page">
           <h3>Nothing published yet</h3>
           <p>

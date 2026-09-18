@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Plus from '@untitled-ui/icons-react/build/esm/Plus';
 import Trash01 from '@untitled-ui/icons-react/build/esm/Trash01';
 import ChevronUp from '@untitled-ui/icons-react/build/esm/ChevronUp';
 import ChevronDown from '@untitled-ui/icons-react/build/esm/ChevronDown';
 import UploadCloud01 from '@untitled-ui/icons-react/build/esm/UploadCloud01';
 import Loading01 from '@untitled-ui/icons-react/build/esm/Loading01';
+import RefreshCw01 from '@untitled-ui/icons-react/build/esm/RefreshCw01';
+import Check from '@untitled-ui/icons-react/build/esm/Check';
+import AlertCircle from '@untitled-ui/icons-react/build/esm/AlertCircle';
 
 import ImageField, { directSrc } from './ImageField';
-import { uploadImage } from '../../lib/api';
-import { prepareImage, ACCEPT } from '../../lib/imageResize';
+import { uploadImage, deleteImage } from '../../lib/api';
+import { prepareImage, ACCEPT, formatBytes } from '../../lib/imageResize';
+import { CLOUDINARY_PREFIX } from '../../../shared/content-schema.js';
 
 /* ===========================================================================
    Schema-driven form fields.
@@ -18,7 +22,7 @@ import { prepareImage, ACCEPT } from '../../lib/imageResize';
    of having the schema at all.
    =========================================================================== */
 
-export function Field({ field, value, onChange, idPrefix = 'cf' }) {
+export function Field({ field, value, onChange, idPrefix = 'cf', publishedUrls }) {
   const id = `${idPrefix}-${field.key}`;
 
   /* --------------------------------------------------------- toggle --- */
@@ -105,6 +109,7 @@ export function Field({ field, value, onChange, idPrefix = 'cf' }) {
           folder={field.folder || 'brand'}
           name={field.key}
           label={field.label}
+          publishedUrls={publishedUrls}
           cover
         />
         {field.help && <p className="cf-help">{field.help}</p>}
@@ -114,12 +119,12 @@ export function Field({ field, value, onChange, idPrefix = 'cf' }) {
 
   /* ------------------------------------------------------ image list --- */
   if (field.type === 'imagelist') {
-    return <ImageList field={field} value={value} onChange={onChange} />;
+    return <ImageList field={field} value={value} onChange={onChange} publishedUrls={publishedUrls} />;
   }
 
   /* ----------------------------------------------------------- list --- */
   if (field.type === 'list') {
-    return <ListField field={field} value={value} onChange={onChange} idPrefix={id} />;
+    return <ListField field={field} value={value} onChange={onChange} idPrefix={id} publishedUrls={publishedUrls} />;
   }
 
   /* ---------------------------------------------------------- prose --- */
@@ -187,7 +192,7 @@ export function Field({ field, value, onChange, idPrefix = 'cf' }) {
 
 /* ========================================================== list field === */
 
-function ListField({ field, value, onChange, idPrefix }) {
+function ListField({ field, value, onChange, idPrefix, publishedUrls }) {
   const items = Array.isArray(value) ? value : [];
   const atMax = items.length >= (field.max || 50);
   /* A row whose identifying key is generated rather than typed cannot be
@@ -276,6 +281,7 @@ function ListField({ field, value, onChange, idPrefix }) {
                 value={item[f.key]}
                 onChange={(v) => update(i, f.key, v)}
                 idPrefix={`${idPrefix}-${i}`}
+                publishedUrls={publishedUrls}
               />
             ))}
           </div>
@@ -301,10 +307,166 @@ function ListField({ field, value, onChange, idPrefix }) {
 
 /* ========================================================= image list === */
 
-export function ImageList({ field, value, onChange, folder = 'galleries', name = 'photo' }) {
+/* ---------------------------------------------------------------------------
+   Upload queue.
+   ---------------------------------------------------------------------------
+   A whole shoot at once. Every file is its own job with its own stage and
+   progress bar; two run at a time (a phone connection does not benefit from
+   more, and forty parallel requests mostly time out). One failing does not
+   stop the others, and a failed job can be retried on its own.
+
+   Photographs are inserted into the gallery in the order they were selected,
+   not the order they happened to finish, and every one lands in the DRAFT.
+   Nothing is on the site until publish.
+   --------------------------------------------------------------------------- */
+
+const CONCURRENCY = 2;
+const MAX_ORIGINAL_BYTES = 60 * 1024 * 1024;
+const ACCEPTED = new Set(ACCEPT.split(','));
+const OK_EXT = /\.(jpe?g|png|webp|avif)$/i;
+
+let nextJobId = 1;
+
+/** Cheap checks before any decoding, so a bad file fails instantly and clearly. */
+function precheck(file) {
+  const typeOk = ACCEPTED.has(file.type) || (!file.type && OK_EXT.test(file.name));
+  if (!typeOk) {
+    const ext = (file.name.match(/\.[a-z0-9]+$/i) || ['no extension'])[0];
+    return `Not a format the site can use (${file.type || ext}). Use JPEG, PNG or WebP.`;
+  }
+  if (file.size > MAX_ORIGINAL_BYTES) {
+    return `Too large: ${formatBytes(file.size)}. The limit is ${formatBytes(MAX_ORIGINAL_BYTES)} per photograph.`;
+  }
+  return null;
+}
+
+function useUploadQueue({ folder, name, onDone }) {
+  const [jobs, setJobs] = useState([]);
+  const running = useRef(0);
+  const jobsRef = useRef([]);
+  const pump = useRef(null);
+  jobsRef.current = jobs;
+
+  const patch = (id, changes) =>
+    setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, ...changes } : j)));
+
+  const run = async (job) => {
+    running.current += 1;
+    patch(job.id, { stage: 'preparing', progress: 0, message: null });
+    try {
+      const { blob, width, height } = await prepareImage(job.file);
+      patch(job.id, { stage: 'uploading', progress: 0, sizeAfter: blob.size });
+      const res = await uploadImage(blob, {
+        folder, name,
+        onProgress: (p) => patch(job.id, { progress: p }),
+      });
+      if (!res.ok) {
+        patch(job.id, { stage: 'failed', message: res.message });
+      } else {
+        patch(job.id, { stage: 'done', progress: 1, url: res.url, width, height });
+        onDone({ url: res.url, publicId: res.publicId || '', alt: '' }, job.seq);
+      }
+    } catch (err) {
+      patch(job.id, { stage: 'failed', message: err?.message || 'That file could not be read as an image.' });
+    } finally {
+      running.current -= 1;
+      pump.current?.();
+    }
+  };
+
+  pump.current = () => {
+    const queued = jobsRef.current.filter((j) => j.stage === 'queued');
+    while (running.current < CONCURRENCY && queued.length) {
+      const job = queued.shift();
+      /* Mark synchronously so the next pump call does not pick it twice. */
+      jobsRef.current = jobsRef.current.map((j) => (j.id === job.id ? { ...j, stage: 'preparing' } : j));
+      run(job);
+    }
+  };
+
+  useEffect(() => { pump.current?.(); }, [jobs.length]);
+
+  const enqueue = (files, seqStart) => {
+    const added = [...files].map((file, i) => {
+      const problem = precheck(file);
+      return {
+        id: nextJobId++,
+        seq: seqStart + i,
+        file,
+        name: file.name,
+        size: file.size,
+        preview: URL.createObjectURL(file),
+        stage: problem ? 'failed' : 'queued',
+        message: problem,
+        progress: 0,
+      };
+    });
+    setJobs((prev) => [...prev, ...added]);
+  };
+
+  const retry = (id) => {
+    setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, stage: 'queued', message: null, progress: 0 } : j)));
+    setTimeout(() => pump.current?.(), 0);
+  };
+
+  const retryFailed = () => {
+    setJobs((prev) => prev.map((j) => (j.stage === 'failed' && !precheck(j.file) ? { ...j, stage: 'queued', message: null, progress: 0 } : j)));
+    setTimeout(() => pump.current?.(), 0);
+  };
+
+  const clearDone = () => {
+    setJobs((prev) => {
+      prev.filter((j) => j.stage === 'done').forEach((j) => URL.revokeObjectURL(j.preview));
+      return prev.filter((j) => j.stage !== 'done');
+    });
+  };
+
+  const remove = (id) => setJobs((prev) => prev.filter((j) => j.id !== id));
+
+  return { jobs, enqueue, retry, retryFailed, clearDone, remove };
+}
+
+/** Destroy an uploaded asset, unless the live site is still using it. */
+function retireIfSafe(img, publishedUrls) {
+  const url = img?.url || '';
+  if (!url.startsWith(CLOUDINARY_PREFIX)) return;
+  if (publishedUrls && publishedUrls.has(url)) return;
+  deleteImage({ publicId: img.publicId, url });
+}
+
+export function ImageList({ field, value, onChange, folder = 'galleries', name = 'photo', publishedUrls }) {
   const items = Array.isArray(value) ? value : [];
-  const [busy, setBusy] = useState(0);
-  const [error, setError] = useState(null);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  /* Selection order across the batch: url -> seq, so a photograph that
+     finishes early still slots in ahead of the ones picked after it. */
+  const seqByUrl = useRef(new Map());
+  const seqCounter = useRef(0);
+  const [dragging, setDragging] = useState(false);
+
+  const onDone = (img, seq) => {
+    seqByUrl.current.set(img.url, seq);
+    const current = itemsRef.current;
+    let at = current.length;
+    for (let i = 0; i < current.length; i += 1) {
+      const s = seqByUrl.current.get(current[i].url);
+      if (s !== undefined && s > seq) { at = i; break; }
+    }
+    const next = [...current.slice(0, at), img, ...current.slice(at)];
+    itemsRef.current = next;
+    onChange(next);
+  };
+
+  const queue = useUploadQueue({ folder, name, onDone });
+
+  const takeFiles = (files) => {
+    const list = [...(files || [])].filter((f) => f && f.size !== undefined);
+    if (!list.length) return;
+    const start = seqCounter.current;
+    seqCounter.current += list.length;
+    queue.enqueue(list, start);
+  };
 
   const move = (i, delta) => {
     const next = [...items];
@@ -314,32 +476,15 @@ export function ImageList({ field, value, onChange, folder = 'galleries', name =
     onChange(next);
   };
 
-  /* Uploads run one at a time on purpose. A photographer selecting forty
-     frames on a phone connection would otherwise open forty parallel requests
-     and have most of them time out. */
-  const onFiles = async (e) => {
-    const files = [...(e.target.files || [])];
-    e.target.value = '';
-    if (!files.length) return;
-
-    setError(null);
-    const added = [];
-
-    for (let i = 0; i < files.length; i += 1) {
-      setBusy(files.length - i);
-      try {
-        const { blob } = await prepareImage(files[i]);
-        const res = await uploadImage(blob, { folder, name });
-        if (res.ok) added.push({ url: res.url, alt: '' });
-        else setError(`One of those uploads did not go through. ${res.message}`);
-      } catch {
-        setError('One of those files could not be read as an image.');
-      }
-    }
-
-    setBusy(0);
-    if (added.length) onChange([...items, ...added]);
+  const removeAt = (i) => {
+    retireIfSafe(items[i], publishedUrls);
+    onChange(items.filter((_, n) => n !== i));
   };
+
+  const active = queue.jobs.filter((j) => j.stage !== 'done');
+  const done = queue.jobs.filter((j) => j.stage === 'done').length;
+  const failed = queue.jobs.filter((j) => j.stage === 'failed').length;
+  const inFlight = queue.jobs.filter((j) => j.stage === 'preparing' || j.stage === 'uploading' || j.stage === 'queued').length;
 
   return (
     <div className="cf-row cf-gallery">
@@ -350,6 +495,73 @@ export function ImageList({ field, value, onChange, folder = 'galleries', name =
         </span>
       </div>
 
+      {/* ------------------------------------------------ the batch --- */}
+      {queue.jobs.length > 0 && (
+        <div className="cf-batch" role="status" aria-live="polite">
+          <div className="cf-batch-head">
+            <span className="cf-batch-summary">
+              {inFlight ? (
+                <><Loading01 className="cf-spin" width={13} height={13} aria-hidden="true" /> Uploading {inFlight} of {queue.jobs.length}</>
+              ) : failed ? (
+                <><AlertCircle width={13} height={13} aria-hidden="true" /> {done} added, {failed} failed</>
+              ) : (
+                <><Check width={13} height={13} aria-hidden="true" /> All {done} added to the draft</>
+              )}
+            </span>
+            <span className="cf-batch-tools">
+              {failed > 0 && !inFlight && (
+                <button type="button" className="cf-btn" onClick={queue.retryFailed}>
+                  <RefreshCw01 width={13} height={13} aria-hidden="true" /> Retry failed
+                </button>
+              )}
+              {done > 0 && (
+                <button type="button" className="cf-btn cf-btn-quiet" onClick={queue.clearDone}>Clear finished</button>
+              )}
+            </span>
+          </div>
+
+          <ul className="cf-jobs">
+            {queue.jobs.map((j) => (
+              <li key={j.id} className={`cf-job cf-job-${j.stage}`}>
+                <img className="cf-job-thumb" src={j.preview} alt="" />
+                <span className="cf-job-main">
+                  <span className="cf-job-name">{j.name}</span>
+                  <span className="cf-job-meta">
+                    {j.stage === 'queued' && 'Waiting'}
+                    {j.stage === 'preparing' && 'Resizing'}
+                    {j.stage === 'uploading' && `Uploading ${formatBytes(j.sizeAfter || j.size)}, ${Math.round(j.progress * 100)}%`}
+                    {j.stage === 'done' && `Added, ${formatBytes(j.sizeAfter || j.size)}`}
+                    {j.stage === 'failed' && j.message}
+                  </span>
+                  {(j.stage === 'uploading' || j.stage === 'preparing' || j.stage === 'queued') && (
+                    <span className="cf-job-bar" aria-hidden="true">
+                      <span className="cf-job-fill" style={{ width: `${Math.round((j.stage === 'uploading' ? j.progress : 0) * 100)}%` }} />
+                    </span>
+                  )}
+                </span>
+                <span className="cf-job-side">
+                  {j.stage === 'done' && <Check width={16} height={16} aria-hidden="true" />}
+                  {(j.stage === 'preparing' || j.stage === 'uploading') && <Loading01 className="cf-spin" width={16} height={16} aria-hidden="true" />}
+                  {j.stage === 'failed' && (
+                    <>
+                      {!precheck(j.file) && (
+                        <button type="button" className="cf-icon-btn" onClick={() => queue.retry(j.id)} aria-label={`Retry ${j.name}`}>
+                          <RefreshCw01 width={14} height={14} aria-hidden="true" />
+                        </button>
+                      )}
+                      <button type="button" className="cf-icon-btn cf-icon-danger" onClick={() => queue.remove(j.id)} aria-label={`Dismiss ${j.name}`}>
+                        <Trash01 width={14} height={14} aria-hidden="true" />
+                      </button>
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ------------------------------------------------- the grid ---- */}
       <div className="cf-thumbs">
         {items.map((img, i) => (
           <figure key={`${img.url}-${i}`} className="cf-thumb">
@@ -360,36 +572,17 @@ export function ImageList({ field, value, onChange, folder = 'galleries', name =
                 placeholder="Describe this photograph"
                 maxLength={300}
                 value={img.alt || ''}
-                onChange={(e) =>
-                  onChange(items.map((m, n) => (n === i ? { ...m, alt: e.target.value } : m)))
-                }
+                onChange={(e) => onChange(items.map((m, n) => (n === i ? { ...m, alt: e.target.value } : m)))}
                 aria-label={`Description for photograph ${i + 1}`}
               />
               <div className="cf-thumb-tools">
-                <button
-                  type="button"
-                  className="cf-icon-btn"
-                  onClick={() => move(i, -1)}
-                  disabled={i === 0}
-                  aria-label={`Move photograph ${i + 1} earlier`}
-                >
+                <button type="button" className="cf-icon-btn" onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move photograph ${i + 1} earlier`}>
                   <ChevronUp width={13} height={13} aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  className="cf-icon-btn"
-                  onClick={() => move(i, 1)}
-                  disabled={i === items.length - 1}
-                  aria-label={`Move photograph ${i + 1} later`}
-                >
+                <button type="button" className="cf-icon-btn" onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={`Move photograph ${i + 1} later`}>
                   <ChevronDown width={13} height={13} aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  className="cf-icon-btn cf-icon-danger"
-                  onClick={() => onChange(items.filter((_, n) => n !== i))}
-                  aria-label={`Remove photograph ${i + 1}`}
-                >
+                <button type="button" className="cf-icon-btn cf-icon-danger" onClick={() => removeAt(i)} aria-label={`Remove photograph ${i + 1}`}>
                   <Trash01 width={13} height={13} aria-hidden="true" />
                 </button>
               </div>
@@ -397,30 +590,23 @@ export function ImageList({ field, value, onChange, folder = 'galleries', name =
           </figure>
         ))}
 
-        <label className="cf-thumb cf-thumb-add">
-          <input type="file" accept={ACCEPT} multiple onChange={onFiles} />
-          {busy ? (
-            <>
-              <Loading01 className="cf-spin" width={20} height={20} aria-hidden="true" />
-              <span>{busy} left</span>
-            </>
-          ) : (
-            <>
-              <UploadCloud01 width={20} height={20} aria-hidden="true" />
-              <span>Add photographs</span>
-            </>
-          )}
+        <label
+          className={`cf-thumb cf-thumb-add ${dragging ? 'cf-thumb-drop' : ''}`}
+          onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setDragging(false); takeFiles(e.dataTransfer?.files); }}
+        >
+          <input type="file" accept={ACCEPT} multiple onChange={(e) => { takeFiles(e.target.files); e.target.value = ''; }} />
+          <UploadCloud01 width={20} height={20} aria-hidden="true" />
+          <span>{dragging ? 'Drop to add' : 'Add photographs'}</span>
         </label>
       </div>
 
-      {error && (
-        <p className="cf-img-error" role="alert">
-          {error}
-        </p>
-      )}
       <p className="cf-help">
-        Select as many as you like. They are resized in your browser and uploaded one at a time.
-        Order here is the order on the page.
+        Select or drag in as many as you like, a whole shoot at once. Each one is resized in your
+        browser and uploads on its own; one that fails does not stop the rest. Order here is the
+        order on the page, and nothing is on the site until you publish.
       </p>
     </div>
   );

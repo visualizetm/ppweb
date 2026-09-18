@@ -17,7 +17,8 @@ browser bundle.
 | `MONGODB_URI` | Yes | MongoDB Atlas connection string. The database name comes from the URI path, so include it: `mongodb+srv://user:pass@cluster/papsprod?retryWrites=true&w=majority` |
 | `SESSION_SECRET` | Yes | Random 32+ byte string that signs the admin session cookie. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Changing it signs every admin session out. |
 | `ADMIN_PASSWORD` | Yes | The dashboard password. Compared server side only. |
-| `BLOB_READ_WRITE_TOKEN` | Yes, for image uploads | Create a Blob store under **Storage, Blob** in the Vercel dashboard and connect it to this project. Vercel injects this variable automatically. Without it the dashboard works but uploading an image returns a clear "image storage is not connected yet" message. |
+| `CLOUDINARY_URL` | Yes, for image uploads | The single URL from the Cloudinary dashboard (`cloudinary://key:secret@cloud`). Checked first. |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Alternative to the above | The same credentials as three variables. Used only when `CLOUDINARY_URL` is not set. Without either style the dashboard works but uploads return a clear "image storage is not connected yet" message. |
 | `WEB3FORMS_NOTIFY_KEY` | No | Web3Forms access key, used to email Michael when a booking lands. |
 | `NOTIFY_EMAIL` | No | Where those notifications go. |
 
@@ -166,8 +167,19 @@ publish plumbing all follow from the schema.
 
 Uploads go through the browser. A file is resized to a sensible ceiling and
 re-encoded as WebP before it is sent, so a 40 MB camera JPEG becomes a few
-hundred kilobytes and uploads quickly on a phone. Files land in Vercel Blob and
-are served from the CDN. Nothing is committed to git and no redeploy is needed.
+hundred kilobytes and uploads quickly on a phone. Files land in Cloudinary under
+the `papsprod/` folder and are served from its CDN. Nothing is committed to git
+and no redeploy is needed.
+
+A whole shoot can go up in one go: select or drag as many photographs as you
+like into a gallery. Each one uploads on its own with its own progress bar; one
+that fails (wrong format, too large) is marked and can be retried alone while
+the rest carry on. Everything lands in the gallery's draft, same as a single
+upload, and nothing is on the site until you publish.
+
+Removed or replaced images are destroyed in Cloudinary so they do not pile up,
+with one deliberate exception: an image that is still on the live site is kept
+until the publish that retires it, and destroyed then.
 
 A handful of images still ship with the build under `public/`, including the
 three original gallery covers. Those are served as a three-file set

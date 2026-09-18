@@ -278,7 +278,46 @@ export default function AdminStyles() {
 
         .ad-main { padding-inline: var(--space-4); padding-top: var(--space-4); }
         .ad-line { grid-template-columns: 1fr 56px 84px 32px; }
+
+        /* Stat cards were a horizontal scroller that hid two of the four
+           figures with no cue that more existed. A grid shows all four. */
+        .ad-main .ad-stats.hscroll {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          overflow: visible; gap: var(--space-3);
+        }
+        .ad-main .ad-stats.hscroll .ad-stat { min-width: 0; width: auto; }
+
+        /* Tabs scroll as one strip rather than wrapping a lone "Revenue". */
+        .ad-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .ad-tabs::-webkit-scrollbar { display: none; }
+        .ad-tab { flex: none; }
+
+        /* The invoices table crushed six columns into 375px. Each row is a
+           card: number and client on the left, status and amount on the
+           right, age and the link button underneath. */
+        .ad-table thead { display: none; }
+        .ad-table, .ad-table tbody { display: block; }
+        .ad-table tr {
+          display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: auto;
+          gap: var(--space-1) var(--space-3); align-items: center;
+          padding: var(--space-3); margin-bottom: var(--space-2);
+          border: 1px solid var(--edge); border-radius: var(--radius); background: var(--panel);
+        }
+        .ad-table td { display: block; padding: 0; border: 0; min-width: 0; }
+        .ad-table td:nth-child(1) { grid-column: 1; grid-row: 1; }
+        .ad-table td:nth-child(2) { grid-column: 1; grid-row: 2; }
+        .ad-table td:nth-child(3) { grid-column: 2; grid-row: 1; justify-self: end; }
+        .ad-table td:nth-child(4) { grid-column: 2; grid-row: 2; justify-self: end; }
+        .ad-table td:nth-child(5) { grid-column: 1; grid-row: 3; }
+        .ad-table td:nth-child(6) { grid-column: 2; grid-row: 3; justify-self: end; }
       }
+
+      /* --- skeleton variants (same shimmer as the stat cards) ------------ */
+      .ad-skel-line { display: inline-block; height: 0.9em; width: 40%; border-radius: 3px; vertical-align: middle; }
+      .ad-skel-block { display: block; height: 2.6rem; width: 100%; border-radius: var(--radius-sm); }
+      .ad-skel-rows { display: grid; gap: var(--space-2); }
+      .ad-skel-row { display: block; height: 3rem; width: 100%; border-radius: var(--radius); }
+      .ad-skel-row-tall { height: 5.5rem; }
     `}</style>
   );
 }

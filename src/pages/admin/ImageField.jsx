@@ -3,7 +3,8 @@ import UploadCloud01 from '@untitled-ui/icons-react/build/esm/UploadCloud01';
 import Trash01 from '@untitled-ui/icons-react/build/esm/Trash01';
 import Loading01 from '@untitled-ui/icons-react/build/esm/Loading01';
 
-import { uploadImage } from '../../lib/api';
+import { uploadImage, deleteImage } from '../../lib/api';
+import { CLOUDINARY_PREFIX } from '../../../shared/content-schema.js';
 import { prepareImage, formatBytes, ACCEPT } from '../../lib/imageResize';
 
 /* ===========================================================================
@@ -25,7 +26,17 @@ export default function ImageField({
   label = 'Image',
   cover = false,
   compact = false,
+  publishedUrls,
 }) {
+  const [progress, setProgress] = useState(0);
+
+  /* Destroy the old asset when it is replaced or removed, unless the live
+     site is still showing it; that one waits for the publish that retires it. */
+  const retireIfSafe = (url) => {
+    if (!url || !url.startsWith(CLOUDINARY_PREFIX)) return;
+    if (publishedUrls && publishedUrls.has(url)) return;
+    deleteImage({ url });
+  };
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null);
@@ -38,6 +49,11 @@ export default function ImageField({
     e.target.value = '';
     if (!file) return;
 
+    if (file.size > 60 * 1024 * 1024) {
+      setError(`Too large: ${formatBytes(file.size)}. The limit is 60 MB per photograph.`);
+      return;
+    }
+
     setError(null);
     setBusy(true);
     setNote('Resizing');
@@ -45,14 +61,16 @@ export default function ImageField({
     try {
       const { blob, width, height } = await prepareImage(file, { cover });
       setNote(`Uploading ${formatBytes(blob.size)}`);
+      setProgress(0);
 
-      const res = await uploadImage(blob, { folder, name });
+      const res = await uploadImage(blob, { folder, name, onProgress: setProgress });
       if (!res.ok) {
         setError(res.message);
         setNote(null);
         return;
       }
 
+      retireIfSafe(value);
       onChange(res.url);
       setNote(`${width} by ${height}, ${formatBytes(res.bytes || blob.size)}`);
     } catch (err) {
@@ -60,6 +78,7 @@ export default function ImageField({
       setNote(null);
     } finally {
       setBusy(false);
+      setProgress(0);
     }
   };
 
@@ -89,6 +108,7 @@ export default function ImageField({
               type="button"
               className="cf-btn cf-btn-quiet"
               onClick={() => {
+                retireIfSafe(value);
                 onChange('');
                 setNote(null);
               }}
@@ -99,6 +119,11 @@ export default function ImageField({
           )}
         </div>
 
+        {busy && (
+          <span className="cf-job-bar cf-img-bar" aria-hidden="true">
+            <span className="cf-job-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
+          </span>
+        )}
         {note && !error && <p className="cf-img-note">{note}</p>}
         {error && (
           <p className="cf-img-error" role="alert">

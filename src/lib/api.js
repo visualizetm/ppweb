@@ -238,27 +238,50 @@ export const listPublishHistory = () => call('/api/admin/publish-history');
 /* ----------------------------------------------------------------- media -- */
 
 /**
- * Uploads one already-resized image. The body is the raw bytes and the
- * filename rides in the query string, so there is no multipart parser on
- * either side of the wire.
+ * Uploads one already-resized image and reports real progress.
  *
- * @param {Blob} blob  output of prepareImage()
+ * Uses XMLHttpRequest because fetch cannot report upload progress, and a
+ * per-file progress bar is the difference between a forty-photo batch that
+ * feels alive and one that looks hung. The body is the raw bytes and the
+ * filename rides in the query string; no multipart on either side.
+ *
+ * @param {Blob} blob            output of prepareImage()
+ * @param {function} onProgress  called with 0..1 as bytes go up
  */
-export async function uploadImage(blob, { folder = 'uploads', name = 'image', signal } = {}) {
-  try {
-    const path = `/api/admin/upload${qs({ folder, name })}`;
-    const res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': blob.type || 'image/jpeg' },
-      body: blob,
-      credentials: 'same-origin',
-      signal,
-    });
-    return await interpret(res, path);
-  } catch (err) {
-    return networkFailure(err);
-  }
+export function uploadImage(blob, { folder = 'uploads', name = 'image', signal, onProgress } = {}) {
+  const path = `/api/admin/upload${qs({ folder, name })}`;
+
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', path, true);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', blob.type || 'image/jpeg');
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
+    };
+
+    xhr.onload = async () => {
+      /* Hand the XHR result to the same interpreter fetch() uses, so an HTML
+         404, a crashed function or a JSON error read identically here. */
+      const res = new Response(xhr.responseText, {
+        status: xhr.status,
+        headers: { 'content-type': xhr.getResponseHeader('content-type') || '' },
+      });
+      resolve(await interpret(res, path));
+    };
+    xhr.onerror = () => resolve(networkFailure(new Error('network')));
+    xhr.onabort = () => resolve(networkFailure({ name: 'AbortError' }));
+    xhr.ontimeout = () => resolve({ ok: false, kind: 'network', error: 'timeout', message: 'The upload timed out. Check your connection and retry.' });
+    xhr.timeout = 120000;
+
+    if (signal) signal.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(blob);
+  });
 }
 
-export const deleteImage = (url) =>
-  call('/api/admin/upload', { method: 'DELETE', body: { url } });
+/** Destroys an uploaded asset. Accepts the Cloudinary public_id when known,
+    or the delivery URL, from which the server derives it. Anything that is
+    not ours (a /public path) is a no-op server side. */
+export const deleteImage = ({ publicId, url } = {}) =>
+  call('/api/admin/upload', { method: 'DELETE', body: { publicId, url } });

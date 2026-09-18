@@ -42,7 +42,7 @@ import AdminStyles from './AdminStyles';
 import ContentStyles from './ContentStyles';
 import useContentAdmin from './useContentAdmin';
 import {
-  SectionEditor, GalleriesEditor, PublishDialog, PublishHistoryView,
+  SectionEditor, GalleriesEditor, PublishDialog, PublishHistoryView, SkeletonRows,
 } from './ContentScreens';
 import { SECTION_IDS } from '../../../shared/content-schema.js';
 
@@ -481,14 +481,15 @@ export default function Admin() {
         {open ? (
           <BookingDetail booking={open} onBack={() => setOpenId(null)} onPatch={patch} onSay={say} onRefresh={refresh} />
         ) : view === 'invoices' ? (
-          <InvoicesView invoices={invoices} onSay={say} />
+          <InvoicesView invoices={invoices} onSay={say} loading={loading} />
         ) : view === 'publish-history' ? (
-          <PublishHistoryView history={content.history} />
+          <PublishHistoryView history={content.history} loading={content.loading} />
         ) : view === 'galleries' ? (
           <GalleriesEditor
             row={content.byId.get('galleries')}
             saving={content.saving}
             saveError={content.saveErrors.galleries}
+            reverting={content.reverting}
             onChange={(next) => content.setDraft('galleries', next)}
             onRevert={revertSection}
             onSay={say}
@@ -499,6 +500,7 @@ export default function Admin() {
             row={content.byId.get(view)}
             saving={content.saving}
             saveError={content.saveErrors[view]}
+            reverting={content.reverting}
             onChange={(next) => content.setDraft(view, next)}
             onRevert={revertSection}
           />
@@ -911,7 +913,17 @@ function suggestLines(booking) {
 }
 
 /* ==================================================== invoices view ===== */
-function InvoicesView({ invoices, onSay }) {
+function InvoicesView({ invoices, onSay, loading }) {
+  /* Skeleton while the first load is in flight, so the "No invoices yet"
+     empty state never flashes before the real list arrives. */
+  if (loading) {
+    return (
+      <>
+        <header className="ad-head"><h1 className="ad-title">Invoices</h1></header>
+        <SkeletonRows count={4} />
+      </>
+    );
+  }
   if (!invoices.length) {
     return (
       <div className="ad-empty ad-empty-page">

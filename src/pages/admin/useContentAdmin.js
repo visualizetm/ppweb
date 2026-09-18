@@ -32,6 +32,8 @@ export default function useContentAdmin(authed) {
   /* Per-section. A failed autosave used to be invisible: the UI kept saying
      "Saved as draft" while the write had 500'd. */
   const [saveErrors, setSaveErrors] = useState({});
+  /* Which section is mid-revert, so its Discard button can show it. */
+  const [reverting, setReverting] = useState(null);
 
   /* Pending timers and the latest value per section, so a fast typist gets one
      write per pause rather than one per keystroke. */
@@ -139,9 +141,14 @@ export default function useContentAdmin(authed) {
   const revert = useCallback(async (sectionId) => {
     clearTimeout(timers.current[sectionId]);
     delete latest.current[sectionId];
-    const res = await revertContentDraft(sectionId);
-    if (res.ok) await load();
-    return res;
+    setReverting(sectionId);
+    try {
+      const res = await revertContentDraft(sectionId);
+      if (res.ok) await load();
+      return res;
+    } finally {
+      setReverting(null);
+    }
   }, [load]);
 
   const publish = useCallback(
@@ -187,6 +194,7 @@ export default function useContentAdmin(authed) {
     saving,
     error,
     saveErrors,
+    reverting,
     setDraft,
     flush,
     revert,
