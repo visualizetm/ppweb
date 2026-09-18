@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
 
-import { homepageFaq } from '../../data/faqs';
+import { useContent, useHomepageFaq } from '../../lib/useContent';
 
 /* ===========================================================================
    "How many photos do I get?"
@@ -13,7 +13,12 @@ import { homepageFaq } from '../../data/faqs';
    =========================================================================== */
 
 export default function HowManyPhotos() {
-  if (!homepageFaq) return null;
+  const c = useContent('home');
+  const homepageFaq = useHomepageFaq();
+
+  /* Hooks run before the bail-out, or the hook order changes between renders
+     the moment the answer is unpublished. */
+  if (!homepageFaq?.answer?.length) return null;
 
   const [lead, ...rest] = homepageFaq.answer;
 
@@ -22,9 +27,9 @@ export default function HowManyPhotos() {
       <section className="hmp section" aria-labelledby="hmp-title">
         <div className="wrap hmp-grid">
           <div className="hmp-q" data-reveal="slide-left">
-            <span className="hmp-label">The question everyone asks</span>
+            <span className="hmp-label">{c.howManyLabel}</span>
             <h2 id="hmp-title" className="hmp-title">
-              {homepageFaq.question}
+              {c.howManyTitle || homepageFaq.question}
             </h2>
           </div>
 

@@ -9,6 +9,7 @@ import Heart from '@untitled-ui/icons-react/build/esm/Heart';
 import Image03 from '@untitled-ui/icons-react/build/esm/Image03';
 
 import { packages } from '../../data/packages';
+import { useContent } from '../../lib/useContent';
 import { formatMoney } from '../../lib/format';
 
 const ICONS = { Car01, Cube02, Users01, CalendarHeart01, User03, Heart, Image03 };
@@ -21,6 +22,8 @@ const ACCENTS = {
 };
 
 export default function ServicesPreview() {
+  const c = useContent('home');
+
   return (
     <>
       <section className="svc section" aria-labelledby="svc-title">
@@ -28,12 +31,9 @@ export default function ServicesPreview() {
           <div className="svc-head" data-reveal>
             <div>
               <h2 id="svc-title" className="section-title">
-                What I shoot
+                {c.servicesTitle}
               </h2>
-              <p className="section-subtitle">
-                Automotive is the bulk of it, not the limit of it. Every one of these starts with a
-                conversation about what you actually want.
-              </p>
+              <p className="section-subtitle">{c.servicesSubtitle}</p>
             </div>
             <Link to="/services" className="btn btn-secondary btn-sm svc-all">
               Services &amp; pricing

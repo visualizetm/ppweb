@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom';
 import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
 
 import GalleryCard, { galleryCardStyles } from '../GalleryCard';
-import { featuredGalleries } from '../../data/galleries';
+import { useContent, useFeaturedGalleries } from '../../lib/useContent';
 
 export default function Featured() {
+  const c = useContent('home');
+  const featuredGalleries = useFeaturedGalleries(3);
+
   return (
     <>
       <section className="fw section section-dark" aria-labelledby="fw-title">
@@ -12,11 +15,9 @@ export default function Featured() {
           <div className="fw-head" data-reveal>
             <div>
               <h2 id="fw-title" className="section-title">
-                Recent work
+                {c.featuredTitle}
               </h2>
-              <p className="section-subtitle">
-                Three from the last few months. Every shoot gets its own gallery.
-              </p>
+              <p className="section-subtitle">{c.featuredSubtitle}</p>
             </div>
             <Link to="/portfolio" className="btn btn-secondary btn-sm fw-all">
               All galleries

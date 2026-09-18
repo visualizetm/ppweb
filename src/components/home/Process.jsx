@@ -3,8 +3,15 @@ import Calendar from '@untitled-ui/icons-react/build/esm/Calendar';
 import Camera01 from '@untitled-ui/icons-react/build/esm/Camera01';
 import Image03 from '@untitled-ui/icons-react/build/esm/Image03';
 
-/* His actual process, taken from what the old site said: "All bookings start
-   with a meeting to discuss your project." Not a generic four-step template. */
+import { useContent } from '../../lib/useContent';
+
+/* Icons and step numbers stay in code; the words come from the dashboard.
+   The icon list is positional, so step 3 always gets the camera whatever the
+   copy says. Extra steps fall back to the last icon rather than crashing. */
+const ICONS = [MessageSquare01, Calendar, Camera01, Image03];
+
+/* Fallback copy, used only if the content API is unreachable. Kept in sync
+   with DEFAULTS.home.processSteps in shared/content-schema.js. */
 const STEPS = [
   {
     num: '01',
@@ -33,21 +40,31 @@ const STEPS = [
 ];
 
 export default function Process() {
+  const c = useContent('home');
+  const steps = (Array.isArray(c.processSteps) && c.processSteps.length
+    ? c.processSteps
+    : STEPS
+  ).map((step, i) => ({
+    ...step,
+    num: String(i + 1).padStart(2, '0'),
+    icon: ICONS[Math.min(i, ICONS.length - 1)],
+  }));
+
   return (
     <>
       <section className="pr section section-dark" aria-labelledby="pr-title">
         <div className="wrap">
           <div className="pr-head" data-reveal>
             <h2 id="pr-title" className="section-title">
-              How it works
+              {c.processTitle}
             </h2>
             <p className="section-subtitle">
-              Four steps, and the first one is a conversation rather than a payment.
+              {c.processSubtitle}
             </p>
           </div>
 
           <ol className="pr-grid" data-reveal="stagger">
-            {STEPS.map(({ num, title, desc, icon: Icon }) => (
+            {steps.map(({ num, title, desc, icon: Icon }) => (
               <li key={num} className="pr-card">
                 <span className="pr-num">{num}</span>
                 <span className="pr-icon" aria-hidden="true">

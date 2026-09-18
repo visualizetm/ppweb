@@ -4,7 +4,7 @@ import ChevronDown from '@untitled-ui/icons-react/build/esm/ChevronDown';
 import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
 
 import Seo from '../components/Seo';
-import { faqs, faqCategories } from '../data/faqs';
+import { useFaqs } from '../lib/useContent';
 
 function Item({ faq, open, onToggle }) {
   const panelId = `faq-panel-${faq.id}`;
@@ -37,9 +37,16 @@ function Item({ faq, open, onToggle }) {
 }
 
 export default function Faq() {
+  const faqs = useFaqs().map((f, i) => ({ ...f, id: f.id || `q${i}` }));
+
+  /* Categories are derived from the questions themselves, so adding a new
+     group in the dashboard is just typing a new name into the Group box. */
+  const faqCategories = [...new Set(faqs.map((f) => f.category || 'General'))];
+
   /* The most-asked question opens by default — making someone click to read the
      answer they came for is friction for nothing. */
-  const [openId, setOpenId] = useState(faqs[0]?.id ?? null);
+  const [openId, setOpenId] = useState(null);
+  const activeId = openId === null ? faqs[0]?.id ?? null : openId;
 
   return (
     <>
@@ -69,13 +76,13 @@ export default function Faq() {
               <h2 className="fq-cat">{cat}</h2>
               <ul className="fq-list">
                 {faqs
-                  .filter((f) => f.category === cat)
+                  .filter((f) => (f.category || 'General') === cat)
                   .map((f) => (
                     <Item
                       key={f.id}
                       faq={f}
-                      open={openId === f.id}
-                      onToggle={() => setOpenId(openId === f.id ? null : f.id)}
+                      open={activeId === f.id}
+                      onToggle={() => setOpenId(activeId === f.id ? '' : f.id)}
                     />
                   ))}
               </ul>

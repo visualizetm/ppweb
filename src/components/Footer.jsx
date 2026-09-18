@@ -5,6 +5,7 @@ import MarkerPin01 from '@untitled-ui/icons-react/build/esm/MarkerPin01';
 import Wordmark from './Wordmark';
 import { SOCIAL_ICONS } from './SocialIcon';
 import { site } from '../data/site';
+import { useContent } from '../lib/useContent';
 
 const COLUMNS = [
   {
@@ -26,6 +27,12 @@ const COLUMNS = [
 ];
 
 export default function Footer() {
+  const c = useContent('contact');
+  const social = [
+    c.instagramUrl && { id: 'instagram', label: 'Instagram', url: c.instagramUrl },
+    c.facebookUrl && { id: 'facebook', label: 'Facebook', url: c.facebookUrl },
+  ].filter(Boolean);
+
   const year = new Date().getFullYear();
 
   return (
@@ -42,7 +49,7 @@ export default function Footer() {
             </p>
 
             <div className="ft-social">
-              {site.social.map((s) => {
+              {social.map((s) => {
                 const Icon = SOCIAL_ICONS[s.id];
                 return (
                   <a

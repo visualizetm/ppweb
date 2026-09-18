@@ -2,11 +2,13 @@ import { useState } from 'react';
 
 import Seo from '../components/Seo';
 import GalleryCard, { galleryCardStyles } from '../components/GalleryCard';
-import { galleries, galleryTypes, galleriesByType } from '../data/galleries';
+import { useGalleries, useGalleryTypes } from '../lib/useContent';
 
 export default function Portfolio() {
   const [type, setType] = useState('All');
-  const shown = galleriesByType(type);
+  const galleries = useGalleries();
+  const galleryTypes = useGalleryTypes();
+  const shown = type === 'All' ? galleries : galleries.filter((g) => g.type === type);
 
   return (
     <>

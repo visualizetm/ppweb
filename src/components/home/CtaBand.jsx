@@ -1,20 +1,21 @@
 import { Link } from 'react-router-dom';
 import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
 
+import { useContent } from '../../lib/useContent';
+
 export default function CtaBand() {
+  const c = useContent('home');
+
   return (
     <>
       <section className="cb" aria-labelledby="cb-title">
         <div className="wrap cb-inner reveal">
           <h2 id="cb-title" className="cb-title">
-            Let&rsquo;s talk about your car
+            {c.ctaTitle}
           </h2>
-          <p className="cb-sub">
-            Start with a free consultation. No card, no commitment — just a conversation about what
-            the shoot should be.
-          </p>
+          <p className="cb-sub">{c.ctaSubtitle}</p>
           <Link to="/booking" className="btn btn-primary btn-lg">
-            Book a consultation
+            {c.ctaButtonLabel}
             <ArrowRight className="arrow" width={17} height={17} aria-hidden="true" />
           </Link>
         </div>

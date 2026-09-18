@@ -1,5 +1,6 @@
 import Star01 from '@untitled-ui/icons-react/build/esm/Star01';
 
+import { useContent } from '../../lib/useContent';
 
 /* ===========================================================================
    Testimonials.
@@ -10,22 +11,17 @@ import Star01 from '@untitled-ui/icons-react/build/esm/Star01';
    damage a real business if it ships, so the placeholder is the deliverable
    until real quotes arrive.
 
-   To go live: fill the `testimonials` array below with real quotes. The moment
-   it has entries, the placeholders disappear and the real cards render. No
-   other change needed.
+   Quotes now come from the Testimonials screen in the dashboard. The moment
+   one is added and published the placeholders disappear and the real cards
+   render. Nothing is ever seeded here.
    =========================================================================== */
-
-const testimonials = [
-  // {
-  //   text: 'What they actually said, in their words.',
-  //   author: 'First name and last initial',
-  //   detail: '2019 Porsche 911 — Solo Shoot',
-  // },
-];
 
 const SLOT_COUNT = 3;
 
 export default function Testimonials() {
+  const { items } = useContent('testimonials');
+  const copy = useContent('home');
+  const testimonials = Array.isArray(items) ? items.filter((t) => t.text && t.author) : [];
   const hasReal = testimonials.length > 0;
 
   return (
@@ -34,19 +30,15 @@ export default function Testimonials() {
         <div className="wrap">
           <div className="ts-head" data-reveal>
             <h2 id="ts-title" className="section-title">
-              What clients say
+              {copy.testimonialsTitle}
             </h2>
-            {!hasReal && (
-              <p className="section-subtitle">
-                This section is ready and waiting on real quotes. Nothing here is invented.
-              </p>
-            )}
+            {!hasReal && <p className="section-subtitle">{copy.testimonialsEmptyNote}</p>}
           </div>
 
           {hasReal ? (
             <div className="ts-grid" data-reveal="stagger">
               {testimonials.map((t) => (
-                <figure key={t.author} className="ts-card">
+                <figure key={`${t.author}-${t.text.slice(0, 24)}`} className="ts-card">
                   <span className="ts-stars" aria-hidden="true">
                     {Array.from({ length: 5 }, (_, i) => (
                       <Star01 key={i} width={14} height={14} />

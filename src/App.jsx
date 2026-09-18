@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import AnnouncementBar from './components/AnnouncementBar';
 import useReveal, { useScrollTop } from './lib/useReveal';
 
 import Home from './pages/Home';
@@ -134,6 +135,7 @@ export default function App() {
       <a href="#main" className="skip-link">
         Skip to content
       </a>
+      <AnnouncementBar />
       <Navbar />
       <main id="main" tabIndex={-1}>
         <Suspense fallback={<RouteFallback />}>

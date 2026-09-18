@@ -6,7 +6,7 @@ import Calendar from '@untitled-ui/icons-react/build/esm/Calendar';
 
 import Seo from '../components/Seo';
 import Picture from '../components/Picture';
-import { getGallery, galleries } from '../data/galleries';
+import { useGalleries } from '../lib/useContent';
 import { getPackage } from '../data/packages';
 import NotFound from './NotFound';
 
@@ -17,17 +17,21 @@ const PLACEHOLDER_SLOTS = 6;
 
 export default function Gallery() {
   const { slug } = useParams();
-  const gallery = getGallery(slug);
+  const galleries = useGalleries();
+  const gallery = galleries.find((g) => g.slug === slug);
 
   if (!gallery) return <NotFound />;
 
   const { title, caption, blurb, dateLabel, type, location, cover, coverAlt, images, packageSlug } =
     gallery;
 
-  const pkg = getPackage(packageSlug);
+  /* Galleries used to carry an explicit packageSlug. That field is not part of
+     what the dashboard edits, so the shoot type maps to a package instead and
+     falls back to nothing rather than guessing. */
+  const pkg = getPackage(packageSlug || String(type || '').toLowerCase());
   const index = galleries.findIndex((g) => g.slug === slug);
-  const next = galleries[(index + 1) % galleries.length];
-  const hasImages = images && images.length > 0;
+  const next = galleries.length > 1 ? galleries[(index + 1) % galleries.length] : null;
+  const hasImages = Array.isArray(images) && images.length > 0;
 
   return (
     <>
@@ -78,8 +82,8 @@ export default function Gallery() {
           {hasImages ? (
             images.map((img, i) => (
               <Picture
-                key={img.src}
-                src={img.src}
+                key={img.url}
+                src={img.url}
                 alt={img.alt || ''}
                 label="Gallery photo"
                 eager={i < 2}
@@ -98,8 +102,8 @@ export default function Gallery() {
         {!hasImages && (
           <div className="wrap">
             <p className="gl-pending">
-              The full set for this shoot has not been migrated yet. The layout above is live —
-              images drop straight into it once they land.
+              The photographs for this shoot have not been added yet. The layout above is live,
+              and images drop straight into it once they land.
             </p>
           </div>
         )}

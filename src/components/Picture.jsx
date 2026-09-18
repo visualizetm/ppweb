@@ -1,18 +1,28 @@
 /* ===========================================================================
    Picture.
    ---------------------------------------------------------------------------
-   Takes an extension-less path — '/galleries/duo-shoot-10825/cover' — and
-   serves the right file for the browser and the context:
+   Handles the two kinds of image this site now has.
 
-     cover.webp        modern browsers, ~30% smaller
-     cover.jpg         universal fallback
-     cover-thumb.jpg   grid thumbnails
+   1. UPLOADED (the normal case from here on). A full URL out of Vercel Blob,
+      already resized and re-encoded by the browser before it was sent. One
+      file, one <img>, used exactly as given.
 
-   When `src` is null it renders the labelled placeholder slot instead, so a
+   2. COMMITTED. An extension-less path such as '/galleries/duo-shoot-10825/
+      cover', produced by scripts/optimize-images.mjs as a three-file set:
+
+        cover.webp        modern browsers, ~30% smaller
+        cover.jpg         universal fallback
+        cover-thumb.jpg   grid thumbnails
+
+      These are the originals that shipped with the build. Nothing new arrives
+      this way, but the existing gallery covers still do.
+
+   When `src` is empty it renders the labelled placeholder slot instead, so a
    page ships before its photography exists rather than showing a broken image.
-   That is the whole point of the slot pattern — six of the nine galleries are
-   currently in exactly that state.
    =========================================================================== */
+
+/** A full URL, or any path that already names a file, is used verbatim. */
+const isDirect = (src) => /^(https?:)?\/\//i.test(src) || /\.[a-z0-9]{2,5}$/i.test(src);
 
 export default function Picture({
   src,
@@ -34,6 +44,20 @@ export default function Picture({
         aria-label={`${label} — image not added yet`}
         {...rest}
       />
+    );
+  }
+
+  if (isDirect(src)) {
+    return (
+      <picture className={className} style={ratio ? { aspectRatio: ratio } : undefined} {...rest}>
+        <img
+          src={src}
+          alt={alt}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding={eager ? 'sync' : 'async'}
+          {...(eager ? { fetchpriority: 'high' } : {})}
+        />
+      </picture>
     );
   }
 

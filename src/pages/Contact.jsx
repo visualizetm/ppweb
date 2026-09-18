@@ -8,6 +8,7 @@ import Clock from '@untitled-ui/icons-react/build/esm/Clock';
 import Seo from '../components/Seo';
 import { SOCIAL_ICONS } from '../components/SocialIcon';
 import { site } from '../data/site';
+import { useContent } from '../lib/useContent';
 
 /* ===========================================================================
    Contact.
@@ -16,13 +17,22 @@ import { site } from '../data/site';
    I do not have them. Rather than print an invented address that would bounce,
    each unconfirmed channel renders a labelled slot.
 
-   Flip `contact.published` to true in src/data/site.js once the real details
+   Flip the publish toggle on the Contact screen in the dashboard once the real details
    are in, and the real cards replace the slots automatically. Same for
    `hours.published`.
    =========================================================================== */
 
 export default function Contact() {
-  const { contact, social, serviceArea, hours } = site;
+  const { serviceArea, hours } = site;
+  const c = useContent('contact');
+
+  /* Contact details and social links come from the dashboard. The service area
+     line still reads from site.js because nothing on it is a contact detail. */
+  const contact = c;
+  const social = [
+    c.instagramUrl && { id: 'instagram', label: 'Instagram', handle: '@paps_productions', url: c.instagramUrl },
+    c.facebookUrl && { id: 'facebook', label: 'Facebook', handle: 'Paps Productions', url: c.facebookUrl },
+  ].filter(Boolean);
 
   return (
     <>
@@ -94,7 +104,7 @@ export default function Contact() {
                 </span>
                 <span>
                   <span className="ct-item-label">Where I shoot</span>
-                  <span className="ct-item-value">{serviceArea.base}</span>
+                  <span className="ct-item-value">{c.serviceArea || serviceArea.base}</span>
                   <span className="ct-item-note">
                     Travel included within {serviceArea.freeRadiusMiles} miles
                   </span>
@@ -131,9 +141,8 @@ export default function Contact() {
                 <li className="ct-slot" data-label="Email and phone">
                   <span className="ct-slot-label">Email &amp; phone</span>
                   <span className="ct-slot-note">
-                    Not published on the current site, so I do not have them yet. Add them to{' '}
-                    <code>src/data/site.js</code> and set <code>published: true</code> — they appear
-                    here and in the footer automatically.
+                    Not published yet. The quickest way to reach me is the booking form, which comes
+                    straight to me.
                   </span>
                 </li>
               )}

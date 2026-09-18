@@ -134,16 +134,19 @@ export const listPublishHistory = () => call('/api/admin/publish-history');
 
 /* ----------------------------------------------------------------- media -- */
 
-/** Uploads a single already-resized File/Blob. Multipart, so no JSON wrapper. */
-export async function uploadImage(file, { folder = 'uploads', signal } = {}) {
+/**
+ * Uploads one already-resized image. The body is the raw bytes and the
+ * filename rides in the query string, so there is no multipart parser on
+ * either side of the wire.
+ *
+ * @param {Blob} blob  output of prepareImage()
+ */
+export async function uploadImage(blob, { folder = 'uploads', name = 'image', signal } = {}) {
   try {
-    const form = new FormData();
-    form.append('file', file, file.name || 'upload.jpg');
-    form.append('folder', folder);
-
-    const res = await fetch('/api/admin/upload', {
+    const res = await fetch(`/api/admin/upload${qs({ folder, name })}`, {
       method: 'POST',
-      body: form,
+      headers: { 'Content-Type': blob.type || 'image/jpeg' },
+      body: blob,
       credentials: 'same-origin',
       signal,
     });

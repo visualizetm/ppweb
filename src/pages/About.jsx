@@ -5,6 +5,7 @@ import MarkerPin01 from '@untitled-ui/icons-react/build/esm/MarkerPin01';
 import Seo from '../components/Seo';
 import Picture from '../components/Picture';
 import { site } from '../data/site';
+import { useContent } from '../lib/useContent';
 
 /* The two Behind the Lens images and their captions are carried over from the
    previous site, where they were the only glimpse of him working. */
@@ -32,7 +33,21 @@ const BELIEFS = [
   },
 ];
 
+/* Fallback copy, used only until the About screen in the dashboard is filled
+   in and published. Kept here rather than in the schema because it is prose
+   that belongs next to the layout it was written for. */
+const DEFAULT_STANDFIRST =
+  'I shoot cars the way I want to see them photographed, on real roads, in real light, with the time it takes to get it right.';
+
+const DEFAULT_BODY = [
+  'Paps Productions is me. Every shoot, every edit, every conversation. That is the reason bookings start with a meeting rather than a form: I would rather know what you actually want before I quote you for it.',
+  'Automotive is the bulk of the work, and it is where most people find me. But I also shoot portraits, weddings and events, and I edit photos other people took. If you have something in mind that is not on the services page, ask.',
+];
+
 export default function About() {
+  const c = useContent('about');
+  const paragraphs = Array.isArray(c.body) && c.body.length ? c.body : DEFAULT_BODY;
+
   return (
     <>
       <Seo
@@ -47,21 +62,13 @@ export default function About() {
               <span className="eyebrow-dot" aria-hidden="true" />
               Behind the lens
             </span>
-            <h1 className="ab-title display">{site.photographer}</h1>
-            <p className="ab-lead">
-              I shoot cars the way I want to see them photographed — on real roads, in real light,
-              with the time it takes to get it right.
-            </p>
-            <p className="ab-body">
-              Paps Productions is me. Every shoot, every edit, every conversation. That is the reason
-              bookings start with a meeting rather than a form: I would rather know what you actually
-              want before I quote you for it.
-            </p>
-            <p className="ab-body">
-              Automotive is the bulk of the work, and it is where most people find me. But I also
-              shoot portraits, weddings and events, and I edit photos other people took. If you have
-              something in mind that is not on the services page, ask.
-            </p>
+            <h1 className="ab-title display">{c.title || site.photographer}</h1>
+            <p className="ab-lead">{c.standfirst || DEFAULT_STANDFIRST}</p>
+            {paragraphs.map((para) => (
+              <p key={para.slice(0, 32)} className="ab-body">
+                {para}
+              </p>
+            ))}
 
             <p className="ab-area">
               <MarkerPin01 width={15} height={15} aria-hidden="true" />
@@ -70,8 +77,12 @@ export default function About() {
           </div>
 
           <div className="ab-portrait">
-            {/* PLACEHOLDER: no portrait of Michael exists on the old site. */}
-            <div className="slot ab-portrait-slot" data-label="Portrait of Michael" />
+            <Picture
+              src={c.portrait}
+              alt={c.portraitAlt}
+              label="Portrait of Michael"
+              className="ab-portrait-slot"
+            />
           </div>
         </div>
       </section>

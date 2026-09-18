@@ -6,19 +6,20 @@ import MessageSquare01 from '@untitled-ui/icons-react/build/esm/MessageSquare01'
 import AlertCircle from '@untitled-ui/icons-react/build/esm/AlertCircle';
 
 import Seo from '../components/Seo';
-import { packageGroups, hasPlaceholderPricing } from '../data/packages';
+import { packageGroups } from '../data/packages';
 import { addonsForPackage } from '../data/addons';
 import { pricing, policy, site } from '../data/site';
 import { formatMoney } from '../lib/format';
+import { useServicePricing } from '../lib/useContent';
 
-function PriceTag({ tier, isPlaceholder, quoteOnly }) {
-  if (quoteOnly || tier.priceCents === null) {
+function PriceTag({ tier, cents, isPlaceholder, quoteOnly }) {
+  if (quoteOnly || cents === null || cents === undefined) {
     return <span className="sv-quote">Quoted individually</span>;
   }
   return (
     <span className="sv-price">
       {tier.priceFrom && <span className="sv-from">from</span>}
-      {formatMoney(tier.priceCents)}
+      {formatMoney(cents)}
       {isPlaceholder && (
         <span className="sv-ph" title="Placeholder price — not yet confirmed by Michael">
           placeholder
@@ -29,6 +30,8 @@ function PriceTag({ tier, isPlaceholder, quoteOnly }) {
 }
 
 export default function Services() {
+  const sv = useServicePricing();
+
   return (
     <>
       <Seo
@@ -48,13 +51,11 @@ export default function Services() {
             everything delivered, and every booking can start with a free consultation.
           </p>
 
-          {hasPlaceholderPricing && (
+          {sv.placeholderNotice && (
             <p className="sv-warning">
               <AlertCircle width={16} height={16} aria-hidden="true" />
               <span>
-                <strong>Placeholder pricing.</strong> The figures marked below are stand-ins so the
-                booking system could be built and tested. They are not Michael&rsquo;s real prices
-                and must be replaced before this site goes live.
+                <strong>Placeholder pricing.</strong> {sv.placeholderNoticeText}
               </span>
             </p>
           )}
@@ -106,7 +107,8 @@ export default function Services() {
                             <h4 className="sv-tier-name">{tier.name}</h4>
                             <PriceTag
                               tier={tier}
-                              isPlaceholder={pkg.priceIsPlaceholder}
+                              cents={sv.priceFor(pkg.slug, tier.id, tier.priceCents)}
+                              isPlaceholder={sv.placeholderNotice && pkg.priceIsPlaceholder}
                               quoteOnly={pkg.quoteOnly || tier.quoteOnly}
                             />
                           </div>
@@ -180,8 +182,8 @@ export default function Services() {
             <div className="sv-rule">
               <h3>Deposit</h3>
               <p className="sv-rule-value">
-                {formatMoney(pricing.depositCents)}
-                {pricing.depositIsPlaceholder && <span className="sv-ph">placeholder</span>}
+                {formatMoney(sv.depositCents ?? pricing.depositCents)}
+                {sv.placeholderNotice && <span className="sv-ph">placeholder</span>}
               </p>
               <p>
                 Flat, whatever the package. It holds your date and comes off the balance — it is not
@@ -193,11 +195,16 @@ export default function Services() {
               <h3>Travel</h3>
               <p className="sv-rule-value">
                 Free within {pricing.travel.freeRadiusMiles} mi
-                {pricing.travel.isPlaceholder && <span className="sv-ph">placeholder</span>}
+                {sv.placeholderNotice && <span className="sv-ph">placeholder</span>}
               </p>
               <p>
-                {pricing.travel.description} Beyond that it is a flat{' '}
-                {formatMoney(pricing.travel.feeCents)}, up to {site.serviceArea.maxRadiusMiles} miles.
+                {sv.travelText || (
+                  <>
+                    {pricing.travel.description} Beyond that it is a flat{' '}
+                    {formatMoney(pricing.travel.feeCents)}, up to {site.serviceArea.maxRadiusMiles}{' '}
+                    miles.
+                  </>
+                )}
               </p>
             </div>
 
@@ -205,11 +212,15 @@ export default function Services() {
               <h3>Turnaround</h3>
               <p className="sv-rule-value">
                 {pricing.turnaround.standardDays} days
-                {pricing.turnaround.isPlaceholder && <span className="sv-ph">placeholder</span>}
+                {sv.placeholderNotice && <span className="sv-ph">placeholder</span>}
               </p>
               <p>
-                {pricing.turnaround.description} Rush turnaround in{' '}
-                {pricing.turnaround.rushDays} days is available as an add-on.
+                {sv.turnaroundText || (
+                  <>
+                    {pricing.turnaround.description} Rush turnaround in{' '}
+                    {pricing.turnaround.rushDays} days is available as an add-on.
+                  </>
+                )}
               </p>
             </div>
           </div>

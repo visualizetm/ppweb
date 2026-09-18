@@ -4,6 +4,7 @@ import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
 import Picture from '../Picture';
 import LightWedge from '../LightWedge';
 import useLightWindow, { formatDuration } from '../../lib/useLightWindow';
+import { useContent } from '../../lib/useContent';
 
 /* ===========================================================================
    Hero.
@@ -60,6 +61,11 @@ function readout(light) {
 export default function Hero() {
   const light = useLightWindow();
   const { lead, detail } = readout(light);
+  const c = useContent('hero');
+
+  /* A newline in the admin's headline box becomes a line break on the page.
+     Nothing else in the field is interpreted. */
+  const titleLines = String(c.title || '').split('\n');
 
   return (
     <>
@@ -69,7 +75,7 @@ export default function Hero() {
           <div className="hr-light plate">
             <div className="hr-light-head">
               <span className="plate-label">Light today</span>
-              <span className="plate-label hr-place">{light?.place || 'Delaware County, PA'}</span>
+              <span className="plate-label hr-place">{c.lightPlace || light?.place}</span>
             </div>
 
             <LightWedge light={light} />
@@ -84,40 +90,35 @@ export default function Hero() {
           <div className="hr-grid">
             <div className="hr-copy">
               <h1 id="hr-title" className="hr-title">
-                The light is
-                <br />
-                half the job
+                {titleLines.map((line, i) => (
+                  <span key={line || i}>
+                    {line}
+                    {i < titleLines.length - 1 && <br />}
+                  </span>
+                ))}
               </h1>
 
-              <p className="hr-sub">
-                I photograph cars around Delaware County and out into Philadelphia — on streets,
-                in garages, on back roads, at meets. Almost everything in the portfolio was shot
-                inside the bracketed strip above, and picking the right hour is most of why the
-                photos look the way they do.
-              </p>
+              <p className="hr-sub">{c.subtitle}</p>
 
               <div className="hr-ctas">
-                <Link to="/booking" className="btn btn-primary btn-lg">
-                  Book a shoot
+                <Link to={c.primaryCtaHref || '/booking'} className="btn btn-primary btn-lg">
+                  {c.primaryCtaLabel}
                   <ArrowRight className="arrow" width={16} height={16} aria-hidden="true" />
                 </Link>
-                <Link to="/portfolio" className="btn btn-secondary btn-lg">
-                  See the work
-                </Link>
+                {c.secondaryCtaLabel && (
+                  <Link to={c.secondaryCtaHref || '/portfolio'} className="btn btn-secondary btn-lg">
+                    {c.secondaryCtaLabel}
+                  </Link>
+                )}
               </div>
 
-              <p className="hr-note">
-                Booking starts with a conversation, not a card. Nothing is charged when you send it.
-              </p>
+              {c.note && <p className="hr-note">{c.note}</p>}
             </div>
 
             <div className="hr-visual" data-parallax="18">
               <Picture
-                src="/brand/hero"
-                /* Described from the actual image. Probably an Infiniti Q50 —
-                   not stated as fact in the alt text because the last site
-                   confidently mislabelled all three of its cars. */
-                alt="A lowered silver-grey sports sedan on aftermarket wheels, shot from the rear three-quarter outside a modern building under flat winter light"
+                src={c.image}
+                alt={c.imageAlt}
                 label="Hero photograph"
                 eager
                 className="hr-img"
