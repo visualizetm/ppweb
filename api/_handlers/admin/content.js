@@ -1,5 +1,5 @@
-import { requireAdmin } from '../../_lib/auth';
-import { readAllSections, writeDraft, revertDraft } from '../../_lib/content';
+import { requireAdmin } from '../../_lib/auth.js';
+import { readAllSections, writeDraft, revertDraft } from '../../_lib/content.js';
 import { SECTIONS, changedFields } from '../../../shared/content-schema.js';
 
 /* ADMIN. Draft and published side by side, plus which fields differ. */

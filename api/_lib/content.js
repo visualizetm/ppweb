@@ -1,4 +1,4 @@
-import { siteContent } from './mongo';
+import { siteContent } from './mongo.js';
 import {
   SECTIONS,
   SECTION_IDS,

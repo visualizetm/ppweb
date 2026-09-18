@@ -1,6 +1,6 @@
-import { siteContent, publishHistory } from '../../_lib/mongo';
-import { requireAdmin } from '../../_lib/auth';
-import { readAllSections } from '../../_lib/content';
+import { siteContent, publishHistory } from '../../_lib/mongo.js';
+import { requireAdmin } from '../../_lib/auth.js';
+import { readAllSections } from '../../_lib/content.js';
 import { getSection, changedFields } from '../../../shared/content-schema.js';
 
 /* ===========================================================================

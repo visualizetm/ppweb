@@ -1,5 +1,5 @@
-import { publishHistory } from '../../_lib/mongo';
-import { requireAdmin } from '../../_lib/auth';
+import { publishHistory } from '../../_lib/mongo.js';
+import { requireAdmin } from '../../_lib/auth.js';
 
 /* Reverse chronological record of every publish. Read only by design: a
    publish that happened cannot be edited out of the log. */

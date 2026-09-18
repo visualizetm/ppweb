@@ -1,5 +1,5 @@
-import { bookings, invoices } from '../../_lib/mongo';
-import { requireAdmin } from '../../_lib/auth';
+import { bookings, invoices } from '../../_lib/mongo.js';
+import { requireAdmin } from '../../_lib/auth.js';
 
 const DAY = 86400000;
 

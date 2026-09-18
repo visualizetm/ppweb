@@ -1,4 +1,4 @@
-import { isAuthed } from '../../_lib/auth';
+import { isAuthed } from '../../_lib/auth.js';
 
 export default async function handler(req, res) {
   const ok = isAuthed(req);

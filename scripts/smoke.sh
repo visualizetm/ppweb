@@ -75,6 +75,20 @@ else
   pass "api/ creates $FNCOUNT serverless function(s), within the 12 limit"
 fi
 
+# The API must LOAD under native Node ESM, which is how Vercel runs it because
+# package.json declares "type": "module". Native ESM needs explicit .js
+# extensions on relative imports; one missing extension makes every route
+# FUNCTION_INVOCATION_FAILED before any handler runs. This import is cheap:
+# nothing connects to a database until a request arrives.
+if MONGODB_URI=mongodb://smoke/x node --input-type=module \
+     -e "import('./api/index.js').then(()=>process.exit(0)).catch(e=>{console.error(e.code+': '+String(e.message).split('\n')[0]);process.exit(1)})" \
+     >/tmp/pp-esm.log 2>&1; then
+  pass "api/index.js loads under native Node ESM"
+else
+  fail "api/index.js does not load under native ESM; every route would crash on Vercel"
+  head -3 /tmp/pp-esm.log | sed 's/^/        /'
+fi
+
 # Every API endpoint must actually be reachable through vercel.json. A green
 # build says nothing about this: the API once compiled perfectly and 404'd on
 # every request because it relied on a bracketed catch-all filename that a

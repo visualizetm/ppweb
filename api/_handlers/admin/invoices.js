@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
-import { bookings, invoices, nextSequence } from '../../_lib/mongo';
-import { requireAdmin } from '../../_lib/auth';
+import { bookings, invoices, nextSequence } from '../../_lib/mongo.js';
+import { requireAdmin } from '../../_lib/auth.js';
 
 /* PRODUCTION NOTE
    This writes an invoice record and returns it. The Stripe call belongs here:

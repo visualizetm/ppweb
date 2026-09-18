@@ -72,7 +72,7 @@ what makes previews testable.
 
 ## 3. How the API is packaged
 
-The whole API is **one** Serverless Function: `api/[...route].js`. It imports
+The whole API is **one** Serverless Function: `api/index.js`. It imports
 every endpoint from `api/_handlers/` and dispatches on the path.
 
 This is not an aesthetic choice. Vercel turns each routable file under `api/`
@@ -95,6 +95,15 @@ browser could not parse as JSON, so the dashboard showed a generic
 "Something went wrong" for what looked like a password problem. The build was
 green throughout. `api/index.js` is an ordinary filename plus an ordinary
 rewrite, and depends on no filename interpretation at all.
+
+**Every relative import in `api/` and `shared/` must carry its `.js` extension.**
+`package.json` declares `"type": "module"`, so Vercel runs these files as native
+Node ESM, and native ESM does not resolve `'../_lib/mongo'`; it needs
+`'../_lib/mongo.js'`. One missing extension fails the whole `api/index.js`
+module at load, and every route then answers `FUNCTION_INVOCATION_FAILED`
+before any handler runs, with no outgoing requests in the trace. That is what
+the first production deploy did. `scripts/smoke.sh` now imports `api/index.js`
+under native ESM and fails the build if it does not load.
 
 Adding an endpoint is a file in `api/_handlers/` plus one line in the `ROUTES`
 map. A leading underscore tells Vercel not to route a path, which is what keeps

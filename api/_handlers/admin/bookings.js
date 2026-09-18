@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
-import { bookings } from '../../_lib/mongo';
-import { requireAdmin } from '../../_lib/auth';
+import { bookings } from '../../_lib/mongo.js';
+import { requireAdmin } from '../../_lib/auth.js';
 
 const STATUS = ['new','reviewing','quote sent','deposit paid','scheduled','shot','delivered','cancelled'];
 const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

@@ -1,5 +1,5 @@
-import { bookings, nextSequence } from '../_lib/mongo';
-import { sendEmail, bookingEmail } from '../_lib/notify';
+import { bookings, nextSequence } from '../_lib/mongo.js';
+import { sendEmail, bookingEmail } from '../_lib/notify.js';
 
 const TYPES = ['solo','duo','group','event','portrait','wedding','editing'];
 const clean = (v, max = 400) => String(v ?? '').slice(0, max).trim();

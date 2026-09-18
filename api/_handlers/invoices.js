@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { invoices } from '../_lib/mongo';
+import { invoices } from '../_lib/mongo.js';
 
 /* PUBLIC — an invoice is opened cold from a link, with no account and no
    login. It returns only what the invoice page needs to render. There is no
