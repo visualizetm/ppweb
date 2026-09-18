@@ -1,5 +1,5 @@
 import { put, del } from '@vercel/blob';
-import { requireAdmin } from '../_lib/auth';
+import { requireAdmin } from '../../_lib/auth';
 
 /* ===========================================================================
    Image upload.

@@ -1,4 +1,4 @@
-import { readPublished } from './_lib/content';
+import { readPublished } from '../_lib/content';
 
 /* PUBLIC. Returns published site content only. Never exposes drafts, and never
    requires a session: this is what every visitor's first paint depends on. */

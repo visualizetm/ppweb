@@ -74,7 +74,7 @@
       "has": [
         {
           "type": "host",
-          "value": "(www\\.)?papsprod\\.com"
+          "value": "(?:www\\.)?papsprod\\.com"
         }
       ],
       "destination": "https://dashboard.papsprod.com/",
@@ -85,7 +85,7 @@
       "has": [
         {
           "type": "host",
-          "value": "(www\\.)?papsprod\\.com"
+          "value": "(?:www\\.)?papsprod\\.com"
         }
       ],
       "destination": "https://dashboard.papsprod.com/:path*",

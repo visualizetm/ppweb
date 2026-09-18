@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { invoices, bookings } from '../_lib/mongo';
+import { invoices, bookings } from '../../_lib/mongo';
 
 /* PRODUCTION NOTE — THIS IS A STUB AND MUST NOT SHIP AS-IS.
 

@@ -1,4 +1,4 @@
-import { bookings } from './_lib/mongo';
+import { bookings } from '../_lib/mongo';
 
 /* Public: which slots are already taken. Deliberately returns only times and
    durations — no names, no contact details. */

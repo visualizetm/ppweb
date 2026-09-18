@@ -70,7 +70,24 @@ On `localhost` and on `*.vercel.app` preview URLs there is no subdomain, so the
 dashboard stays reachable at `/admin` there. That fallback is deliberate: it is
 what makes previews testable.
 
-## 3. Collections
+## 3. How the API is packaged
+
+The whole API is **one** Serverless Function: `api/[...route].js`. It imports
+every endpoint from `api/_handlers/` and dispatches on the path.
+
+This is not an aesthetic choice. Vercel turns each routable file under `api/`
+into its own function, and the Hobby plan allows twelve per deployment. With one
+file per endpoint this project needed sixteen, so the build succeeded and the
+**deploy** failed straight afterwards, at the line that reads
+`Deploying outputs...`. The limit is checked while functions are packaged, which
+is after `vite build` has already reported success.
+
+Adding an endpoint is a file in `api/_handlers/` plus one line in the `ROUTES`
+map. A leading underscore tells Vercel not to route a path, which is what keeps
+`_handlers/` and `_lib/` out of the function count. `scripts/smoke.sh` fails the
+build if that count ever climbs back above twelve.
+
+## 4. Collections
 
 | Collection | What is in it |
 | --- | --- |
@@ -83,7 +100,7 @@ what makes previews testable.
 Indexes are created automatically on first connection. They are idempotent, so
 there is nothing to maintain.
 
-## 4. Draft and published
+## 5. Draft and published
 
 This is the important idea and it is worth being precise about it.
 
@@ -101,7 +118,7 @@ This is the important idea and it is worth being precise about it.
 Uploading an image is an edit like any other: the photograph goes to storage
 immediately, but the page does not use it until you publish.
 
-## 5. What Michael can change without a developer
+## 6. What Michael can change without a developer
 
 Every screen under **Site content** in the dashboard sidebar.
 
@@ -121,7 +138,7 @@ Adding a new editable field is a change to `shared/content-schema.js` and
 nothing else: the form control, the sanitiser, the change summary and the
 publish plumbing all follow from the schema.
 
-## 6. Photographs
+## 7. Photographs
 
 Uploads go through the browser. A file is resized to a sensible ceiling and
 re-encoded as WebP before it is sent, so a 40 MB camera JPEG becomes a few
@@ -134,7 +151,7 @@ three original gallery covers. Those are served as a three-file set
 `src/components/Picture.jsx` handles both kinds, so the two can coexist
 indefinitely.
 
-## 7. Checks
+## 8. Checks
 
 ```bash
 npm run build            # production build
@@ -147,7 +164,7 @@ of going through `src/lib/api.js`, if a secret-shaped `VITE_` variable reaches
 the bundle, if any colour pair drops below its contrast threshold, or if an
 emoji appears in `src/` or `api/`.
 
-## 8. Known gaps
+## 9. Known gaps
 
 - **Payments are not implemented.** Invoices can be created, sent and viewed.
   Paying one does nothing: `api/invoices/pay.js` returns 501. The invoice page

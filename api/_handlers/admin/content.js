@@ -1,6 +1,6 @@
-import { requireAdmin } from '../_lib/auth';
-import { readAllSections, writeDraft, revertDraft } from '../_lib/content';
-import { SECTIONS, changedFields } from '../../shared/content-schema.js';
+import { requireAdmin } from '../../_lib/auth';
+import { readAllSections, writeDraft, revertDraft } from '../../_lib/content';
+import { SECTIONS, changedFields } from '../../../shared/content-schema.js';
 
 /* ADMIN. Draft and published side by side, plus which fields differ. */
 export default async function handler(req, res) {

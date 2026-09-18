@@ -64,6 +64,17 @@ else
   pass "all API access goes through src/lib/api.js"
 fi
 
+# Vercel's Hobby plan allows 12 Serverless Functions per deployment, and the
+# limit is enforced when functions are PACKAGED, after the build succeeds. That
+# failure mode looks like a green build that dies at "Deploying outputs...", so
+# it is worth catching here rather than in a deploy log.
+FNCOUNT=$(find api -name '*.js' -not -path '*/_*' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$FNCOUNT" -gt 12 ]; then
+  fail "api/ would create $FNCOUNT serverless functions; the Hobby limit is 12"
+else
+  pass "api/ creates $FNCOUNT serverless function(s), within the 12 limit"
+fi
+
 # Demo mode is gone. Any surviving reference is a bug, not a leftover comment.
 DEMO=$(grep -rln -e 'VITE_DEMO_MODE' -e 'isDemo' -e 'pp_demo_' -e 'dataSource' \
        src api 2>/dev/null || true)

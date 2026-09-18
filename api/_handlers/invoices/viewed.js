@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { invoices } from '../_lib/mongo';
+import { invoices } from '../../_lib/mongo';
 
 /* Records the FIRST open only. "Opened 3 days ago" is what is useful to
    someone chasing a payment; a timestamp that resets on every refresh is not. */
