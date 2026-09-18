@@ -18,6 +18,16 @@ import XClose from '@untitled-ui/icons-react/build/esm/XClose';
 import ArrowLeft from '@untitled-ui/icons-react/build/esm/ArrowLeft';
 import AlertCircle from '@untitled-ui/icons-react/build/esm/AlertCircle';
 import Loading01 from '@untitled-ui/icons-react/build/esm/Loading01';
+import Announcement01 from '@untitled-ui/icons-react/build/esm/Announcement01';
+import Home02 from '@untitled-ui/icons-react/build/esm/Home02';
+import LayoutAlt01 from '@untitled-ui/icons-react/build/esm/LayoutAlt01';
+import Tag01 from '@untitled-ui/icons-react/build/esm/Tag01';
+import Mail01 from '@untitled-ui/icons-react/build/esm/Mail01';
+import User03 from '@untitled-ui/icons-react/build/esm/User03';
+import Star01 from '@untitled-ui/icons-react/build/esm/Star01';
+import HelpCircle from '@untitled-ui/icons-react/build/esm/HelpCircle';
+import UploadCloud01 from '@untitled-ui/icons-react/build/esm/UploadCloud01';
+import ClockRewind from '@untitled-ui/icons-react/build/esm/ClockRewind';
 
 import {
   login, logout, getSession, listBookings, updateBooking, markAllRead,
@@ -27,8 +37,13 @@ import { invoiceUrl, invoiceState, invoiceStatus, STATUS_LABEL, STATUS_TONE } fr
 import { formatMoney, relativeTime, initials, truncate } from '../../lib/format';
 import { shootDate, shootTime } from '../../lib/tz';
 import { pricing, policy } from '../../data/site';
-import { galleriesMissingImages } from '../../data/galleries';
 import AdminStyles from './AdminStyles';
+import ContentStyles from './ContentStyles';
+import useContentAdmin from './useContentAdmin';
+import {
+  SectionEditor, GalleriesEditor, PublishDialog, PublishHistoryView,
+} from './ContentScreens';
+import { SECTION_IDS } from '../../../shared/content-schema.js';
 
 /* ===========================================================================
    Admin.
@@ -54,10 +69,33 @@ const NAV_1 = [
 const NAV_2 = [
   { id: 'inquiries', label: 'Inquiries', icon: MessageSquare01, badge: true },
   { id: 'invoices', label: 'Invoices', icon: CreditCard01 },
-  { id: 'galleries', label: 'Galleries', icon: Image03 },
   { id: 'analytics', label: 'Analytics', icon: BarChart01 },
   { id: 'settings', label: 'Settings', icon: Settings01 },
 ];
+
+/* Everything Michael edits himself. The ids match section ids in
+   shared/content-schema.js; NAV_CONTENT is asserted against SECTION_IDS below
+   so adding a section without adding it here fails loudly in development. */
+const NAV_CONTENT = [
+  { id: 'galleries', label: 'Galleries', icon: Image03 },
+  { id: 'announcement', label: 'Announcement bar', icon: Announcement01 },
+  { id: 'hero', label: 'Hero', icon: Home02 },
+  { id: 'home', label: 'Home sections', icon: LayoutAlt01 },
+  { id: 'services', label: 'Pricing', icon: Tag01 },
+  { id: 'about', label: 'About page', icon: User03 },
+  { id: 'testimonials', label: 'Testimonials', icon: Star01 },
+  { id: 'faq', label: 'FAQ', icon: HelpCircle },
+  { id: 'contact', label: 'Contact details', icon: Mail01 },
+];
+
+const CONTENT_VIEWS = new Set(NAV_CONTENT.map((n) => n.id));
+
+if (import.meta.env.DEV) {
+  const missing = SECTION_IDS.filter((id) => !CONTENT_VIEWS.has(id));
+  if (missing.length) {
+    console.warn(`[admin] content sections with no nav entry: ${missing.join(', ')}`);
+  }
+}
 
 const TABS = ['Overview', 'Bookings', 'Clients', 'Revenue'];
 
@@ -153,7 +191,10 @@ export default function Admin() {
   const [openId, setOpenId] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [publishOpen, setPublishOpen] = useState(false);
   const searchRef = useRef(null);
+
+  const content = useContentAdmin(authed);
 
   useEffect(() => {
     getSession().then((r) => setAuthed(Boolean(r.ok && r.session?.authed)));
@@ -221,6 +262,11 @@ export default function Admin() {
     }
   };
 
+  const revertSection = async (sectionId) => {
+    const res = await content.revert(sectionId);
+    say(res?.ok ? 'Draft discarded. This section matches the live site again.' : 'Could not discard that draft.');
+  };
+
   const openBooking = (b) => {
     setOpenId(b.id);
     if (!b.read) patch(b.id, { read: true });
@@ -271,7 +317,30 @@ export default function Admin() {
           ))}
 
           <span className="ad-nav-rule" role="separator" />
+          <span className="ad-nav-group">Site content</span>
+
+          {NAV_CONTENT.map((n) => (
+            <button key={n.id} type="button"
+              className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
+              onClick={() => { setView(n.id); setOpenId(null); }}>
+              <n.icon width={16} height={16} aria-hidden="true" />
+              {n.label}
+              {content.byId.get(n.id)?.changed?.length > 0 && (
+                <span className="ad-dot" title="Unpublished changes" aria-label="Unpublished changes" />
+              )}
+            </button>
+          ))}
+
+          <button type="button"
+            className={`ad-nav-item ${view === 'publish-history' ? 'ad-nav-on' : ''}`}
+            onClick={() => { setView('publish-history'); setOpenId(null); }}>
+            <ClockRewind width={16} height={16} aria-hidden="true" />
+            Publish history
+          </button>
+
+          <span className="ad-nav-rule" role="separator" />
         </nav>
+
 
         <div className="ad-week">
           <div className="ad-week-head">
@@ -292,6 +361,28 @@ export default function Admin() {
           {!stats?.upcoming?.length && <p className="ad-empty-mini">Nothing booked yet.</p>}
         </div>
 
+        {/* The one control that changes the public site. It is deliberately
+            the most prominent thing in the sidebar and deliberately the only
+            way anything reaches a visitor. */}
+        <div className="ad-publish">
+          <button
+            type="button"
+            className={`cf-btn cf-btn-primary cf-publish-btn ${content.pendingCount ? '' : 'cf-publish-idle'}`}
+            onClick={() => setPublishOpen(true)}
+            disabled={!content.pendingCount}
+          >
+            <UploadCloud01 width={15} height={15} aria-hidden="true" />
+            {content.pendingCount
+              ? `Publish ${content.pendingCount} ${content.pendingCount === 1 ? 'change' : 'changes'}`
+              : 'Nothing to publish'}
+          </button>
+          <p className="ad-publish-note">
+            {content.pendingCount
+              ? 'Your edits are saved as drafts. The site does not change until you publish.'
+              : 'The live site matches your drafts.'}
+          </p>
+        </div>
+
         <div className="ad-side-foot">
           <button type="button" className="ad-reset" onClick={async () => { await logout(); setAuthed(false); }}>
             <LogOut01 width={13} height={13} aria-hidden="true" />
@@ -306,8 +397,24 @@ export default function Admin() {
           <BookingDetail booking={open} onBack={() => setOpenId(null)} onPatch={patch} onSay={say} onRefresh={refresh} />
         ) : view === 'invoices' ? (
           <InvoicesView invoices={invoices} onSay={say} />
+        ) : view === 'publish-history' ? (
+          <PublishHistoryView history={content.history} />
         ) : view === 'galleries' ? (
-          <GalleriesView />
+          <GalleriesEditor
+            row={content.byId.get('galleries')}
+            saving={content.saving}
+            onChange={(next) => content.setDraft('galleries', next)}
+            onRevert={revertSection}
+            onSay={say}
+          />
+        ) : CONTENT_VIEWS.has(view) ? (
+          <SectionEditor
+            sectionId={view}
+            row={content.byId.get(view)}
+            saving={content.saving}
+            onChange={(next) => content.setDraft(view, next)}
+            onRevert={revertSection}
+          />
         ) : (
           <>
             <header className="ad-head">
@@ -427,8 +534,25 @@ export default function Admin() {
         )}
       </main>
 
+      {publishOpen && (
+        <PublishDialog
+          pending={content.pending}
+          onCancel={() => setPublishOpen(false)}
+          onConfirm={async (sectionIds) => {
+            const res = await content.publish(sectionIds);
+            setPublishOpen(false);
+            say(
+              res.ok
+                ? `Published. ${sectionIds.length} ${sectionIds.length === 1 ? 'section is' : 'sections are'} now live.`
+                : res.message || 'That publish did not go through.'
+            );
+          }}
+        />
+      )}
+
       {toast && <div className="ad-toast" role="status">{toast}</div>}
       <AdminStyles />
+      <ContentStyles />
     </div>
   );
 }
@@ -742,21 +866,3 @@ function InvoicesView({ invoices, onSay }) {
 }
 
 /* ==================================================== galleries view ==== */
-function GalleriesView() {
-  return (
-    <>
-      <header className="ad-head"><h1 className="ad-title">Galleries</h1></header>
-      <div className="ad-empty ad-empty-page">
-        <h3>{galleriesMissingImages.length} galleries still need photographs</h3>
-        <p>
-          Their pages are live and render placeholder frames until images land. Drop optimised
-          files into <code>public/galleries/&lt;slug&gt;/</code> and list them in the gallery&rsquo;s
-          data file — no code changes needed.
-        </p>
-        <ul className="ad-gal-list">
-          {galleriesMissingImages.map((g) => (<li key={g.slug}><span className="data">{g.slug}</span>{g.dateLabel}</li>))}
-        </ul>
-      </div>
-    </>
-  );
-}
