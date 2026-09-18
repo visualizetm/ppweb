@@ -1,28 +1,21 @@
 /* ===========================================================================
    Invoice tokens.
    ---------------------------------------------------------------------------
-   WHY THIS EXISTS, AND WHY IT DEVIATES FROM THE SKILL
+   KNOWN INCOMPLETE — this is the payment path, and payments are a later pass.
 
-   Demo state normally lives in sessionStorage. A copyable invoice link breaks
-   that assumption completely: the entire point is that Michael sends the link
-   and the customer opens it somewhere else — another tab, another browser,
-   their phone. sessionStorage is empty there, so the invoice would not exist
-   and the demo would fail at exactly the moment it needs to land.
+   The invoice payload is encoded INTO the link: base64url JSON in the URL. The
+   invoice page renders entirely from that token with no shared state, which is
+   why a pasted link opens cold on any device. Payment status is the one piece
+   that cannot ride in the URL (the URL is fixed once it is sent), so it is
+   mirrored to localStorage instead.
 
-   So the invoice payload is encoded INTO the token: base64url JSON in the URL.
-   The invoice page renders entirely from the token with no shared state, which
-   means a pasted link works cold on any device.
-
-   Payment status is a separate concern — see paidStore below. It mirrors to
-   localStorage so paying in one tab shows up in the admin in another on the
-   same machine. That is the one piece that cannot ride in the URL, because the
-   URL is fixed once it is sent.
-
-   IN PRODUCTION none of this survives: the token becomes a real Stripe invoice
-   id and the payload lives server-side. Documented in DEMO-TO-PRODUCTION.md.
+   When payments are wired up, the token becomes a real Stripe invoice id, the
+   page loads through getInvoice(), and this whole local mirror goes away. Until
+   then api/invoices/pay.js is a deliberate 501 stub and nothing here can charge
+   anyone. Left deliberately untouched by the content-management build.
    =========================================================================== */
 
-const PAID_KEY = 'pp_demo_invoices_v1';
+const PAID_KEY = 'pp_invoice_state_v1';
 
 /* --- base64url, unicode-safe ------------------------------------------- */
 const toB64Url = (str) => {
@@ -100,8 +93,8 @@ export const invoiceUrl = (invoice, origin = window.location.origin) =>
    Payment + view status.
    -------------------------------------------------------------------------
    localStorage, not sessionStorage, and deliberately so: the whole point is
-   that the state survives being opened in a different tab. Namespaced, and
-   cleared by the admin's "Reset demo data" control.
+   that the state survives being opened in a different tab. Namespaced. Goes
+   away entirely once Stripe is the source of truth.
    ========================================================================= */
 
 function readAll() {

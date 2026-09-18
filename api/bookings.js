@@ -1,4 +1,4 @@
-import { bookings } from './_lib/mongo';
+import { bookings, nextSequence } from './_lib/mongo';
 import { sendEmail, bookingEmail } from './_lib/notify';
 
 const TYPES = ['solo','duo','group','event','portrait','wedding','editing'];
@@ -16,8 +16,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'email_invalid', message: 'That email address is not valid.' });
   }
 
+  /* Sequential and atomic. The old Date.now() slice could collide, and ref now
+     carries a unique index, so a collision would reject a real booking. */
+  const seq = await nextSequence('booking');
+
   const doc = {
-    ref: `PP-${Date.now().toString().slice(-6)}`,
+    ref: `PP-${1000 + seq}`,
     createdAt: new Date(),
     updatedAt: new Date(),
     packageSlug: TYPES.includes(b.packageSlug) ? b.packageSlug : null,
@@ -39,8 +43,6 @@ export default async function handler(req, res) {
     status: 'new',
     read: false,
     notes: '',
-    messageCount: 1,
-    invoices: [],
   };
 
   try {

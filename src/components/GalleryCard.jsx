@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
 import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
-import AlertCircle from '@untitled-ui/icons-react/build/esm/AlertCircle';
 
 import Picture from './Picture';
-import { isDemo } from '../lib/dataSource';
 
 /* ===========================================================================
    Gallery card.
@@ -14,7 +12,7 @@ import { isDemo } from '../lib/dataSource';
    =========================================================================== */
 
 export default function GalleryCard({ gallery, eager = false, featured = false }) {
-  const { slug, title, caption, dateLabel, type, cover, coverAlt, dateDisputed } = gallery;
+  const { slug, title, caption, dateLabel, type, cover, coverAlt } = gallery;
 
   return (
     <Link to={`/portfolio/${slug}`} className={`gc ${featured ? 'gc-featured' : ''}`}>
@@ -40,16 +38,6 @@ export default function GalleryCard({ gallery, eager = false, featured = false }
         {/* A descriptive line, not a bare date — a date tells a visitor nothing
             about whether they want to open it. */}
         <span className="gc-caption">{caption}</span>
-
-        {/* Only surfaced in the demo: an unresolved data conflict Michael needs
-            to settle. It disappears in production along with everything else
-            behind isDemo. */}
-        {isDemo && dateDisputed && (
-          <span className="gc-flag">
-            <AlertCircle width={13} height={13} aria-hidden="true" />
-            Date needs confirming
-          </span>
-        )}
 
         <span className="gc-more">
           View gallery

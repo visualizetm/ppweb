@@ -19,7 +19,7 @@ import LightWedge from '../components/LightWedge';
 import useLightWindow from '../lib/useLightWindow';
 import { packages, getPackage } from '../data/packages';
 import { site } from '../data/site';
-import { submitBooking, getBookedSlots, isDemo } from '../lib/dataSource';
+import { submitBooking, getBookedSlots } from '../lib/api';
 import { slotsForDate, selectableDates } from '../lib/slots';
 import { LIGHT_LABELS } from '../lib/sun';
 import { shootTime, shootDate, shootZoneLabel, visitorIsElsewhere, zonedParts } from '../lib/tz';
@@ -360,17 +360,6 @@ export default function Booking() {
                 comes up.
               </li>
             </ol>
-
-            {isDemo && (
-              <p className="bk-demo-note">
-                <AlertCircle width={15} height={15} aria-hidden="true" />
-                <span>
-                  This is the demo, so nothing was actually sent and no email went anywhere. The
-                  booking did land in the dashboard though — open the admin and it is at the top of
-                  the list.
-                </span>
-              </p>
-            )}
 
             <div className="bk-done-ctas">
               <Link to="/portfolio" className="btn btn-secondary">

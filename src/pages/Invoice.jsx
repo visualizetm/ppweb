@@ -8,7 +8,7 @@ import Loading01 from '@untitled-ui/icons-react/build/esm/Loading01';
 import Seo from '../components/Seo';
 import Wordmark from '../components/Wordmark';
 import { decodeInvoice, invoiceState, invoiceStatus, STATUS_LABEL } from '../lib/invoiceToken';
-import { markInvoiceViewed, payInvoice, DEMO_TEST_CARDS, isDemo } from '../lib/dataSource';
+import { markInvoiceViewed, payInvoice } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { shootDate } from '../lib/tz';
 import { site, policy } from '../data/site';
@@ -250,28 +250,6 @@ export default function Invoice() {
                 Pay {formatMoney(invoice.amountDueCents)}
               </h2>
 
-              {isDemo && DEMO_TEST_CARDS.length > 0 && (
-                <div className="iv-testcards">
-                  <span className="plate-label">Demo only — this panel disappears in production</span>
-                  <ul>
-                    {DEMO_TEST_CARDS.map((c) => (
-                      <li key={c.number}>
-                        <button
-                          type="button"
-                          className="iv-testcard"
-                          onClick={() =>
-                            setCard({ number: c.number, exp: '12 / 30', cvc: '123', name: 'Casey Moreno' })
-                          }
-                        >
-                          <span className="data">{c.number}</span>
-                          <span>{c.label}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <div className="iv-fields">
                 <label className="iv-field iv-field-wide">
                   <span className="bk-label">Name on card</span>
@@ -348,9 +326,7 @@ export default function Invoice() {
 
               <p className="iv-secure">
                 <Lock01 width={13} height={13} aria-hidden="true" />
-                {isDemo
-                  ? 'Demo only. No card details are sent anywhere and nothing is charged.'
-                  : 'Card details go straight to Stripe and never touch this site.'}
+                Card details go straight to Stripe and never touch this site.
               </p>
             </section>
           )}

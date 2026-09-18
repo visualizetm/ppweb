@@ -5,7 +5,6 @@ import MarkerPin01 from '@untitled-ui/icons-react/build/esm/MarkerPin01';
 import Wordmark from './Wordmark';
 import { SOCIAL_ICONS } from './SocialIcon';
 import { site } from '../data/site';
-import { isDemo } from '../lib/dataSource';
 
 const COLUMNS = [
   {
@@ -94,7 +93,6 @@ export default function Footer() {
             &copy; {year} {site.name}. Photography by {site.photographer}.
           </p>
           <p className="ft-stamp" title="Deployed build">
-            {isDemo ? 'demo · ' : ''}
             {__BUILD_SHA__}
           </p>
         </div>

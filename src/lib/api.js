@@ -1,13 +1,11 @@
 /* ===========================================================================
-   Live data source.
+   API client.
    ---------------------------------------------------------------------------
-   The real network layer. Identical function signatures to ./demo.js — if you
-   add a function to one, add it to the other, or flipping VITE_DEMO_MODE will
-   break at runtime instead of at build time.
-
    THIS IS THE ONLY FILE IN src/ PERMITTED TO CALL fetch('/api/...').
-   scripts/smoke.sh enforces that; a component reaching for the network
-   directly fails the smoke test.
+   scripts/smoke.sh enforces it; a component reaching for the network directly
+   fails the smoke test. Everything else imports named functions from here, so
+   there is exactly one place where request shapes, credentials and error
+   handling are decided.
    =========================================================================== */
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -92,8 +90,6 @@ export const markAllRead = () =>
 export const getBookedSlots = () => call('/api/availability');
 
 /* -------------------------------------------------------------- invoices -- */
-/* These hit the server, which holds STRIPE_SECRET_KEY. The secret key never
-   reaches the browser and is never given a VITE_ prefix. */
 
 export const createInvoice = (body) =>
   call('/api/admin/invoices', { method: 'POST', body });
@@ -111,18 +107,68 @@ export const voidInvoice = (id) =>
 
 export const listInvoices = () => call('/api/admin/invoices');
 
-/* Test cards are a demo-only affordance. Exported empty so any component that
-   reads it renders nothing in production without needing an isDemo check. */
-export const DEMO_TEST_CARDS = [];
-
 /* ------------------------------------------------------------- dashboard -- */
 
 export const getDashboardStats = () => call('/api/admin/stats');
 
-/* ------------------------------------------------------------ demo-only --- */
+/* --------------------------------------------------------------- content -- */
+/* Public read returns PUBLISHED content only. The admin read returns draft and
+   published side by side so the dashboard can show what is staged. */
 
-/** Not available in production — there is no seeded data to reset. Returns a
-    refusal rather than throwing so a stray call cannot crash the dashboard. */
-export const resetDemoData = async () => ({ ok: false, error: 'not_available_in_production' });
+export const getPublishedContent = (signal) => call('/api/content', { signal });
 
-export const capabilities = { demo: false, canReset: false };
+export const getAdminContent = () => call('/api/admin/content');
+
+export const saveContentDraft = (section, draft) =>
+  call('/api/admin/content', { method: 'PUT', body: { section, draft } });
+
+export const revertContentDraft = (section) =>
+  call('/api/admin/content', { method: 'PATCH', body: { section, revert: true } });
+
+export const getPendingChanges = () => call('/api/admin/publish');
+
+export const publishSections = (sections) =>
+  call('/api/admin/publish', { method: 'POST', body: { sections } });
+
+export const listPublishHistory = () => call('/api/admin/publish-history');
+
+/* ----------------------------------------------------------------- media -- */
+
+/** Uploads a single already-resized File/Blob. Multipart, so no JSON wrapper. */
+export async function uploadImage(file, { folder = 'uploads', signal } = {}) {
+  try {
+    const form = new FormData();
+    form.append('file', file, file.name || 'upload.jpg');
+    form.append('folder', folder);
+
+    const res = await fetch('/api/admin/upload', {
+      method: 'POST',
+      body: form,
+      credentials: 'same-origin',
+      signal,
+    });
+
+    const text = await res.text();
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: data?.error || `http_${res.status}`,
+        message: data?.message || 'That upload did not go through.',
+      };
+    }
+    return { ok: true, ...(data || {}) };
+  } catch (err) {
+    if (err?.name === 'AbortError') return { ok: false, error: 'aborted' };
+    return { ok: false, error: 'network', message: 'Could not reach the server.' };
+  }
+}
+
+export const deleteImage = (url) =>
+  call('/api/admin/upload', { method: 'DELETE', body: { url } });

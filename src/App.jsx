@@ -3,7 +3,6 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import DemoBadge from './components/DemoBadge';
 import useReveal, { useScrollTop } from './lib/useReveal';
 
 import Home from './pages/Home';
@@ -126,7 +125,6 @@ export default function App() {
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/invoice/:token" element={<Invoice />} />
         </Routes>
-        <DemoBadge />
       </Suspense>
     );
   }
@@ -153,7 +151,6 @@ export default function App() {
         </Suspense>
       </main>
       <Footer />
-      <DemoBadge />
     </>
   );
 }

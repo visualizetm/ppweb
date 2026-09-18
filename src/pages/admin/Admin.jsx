@@ -21,8 +21,8 @@ import Loading01 from '@untitled-ui/icons-react/build/esm/Loading01';
 
 import {
   login, logout, getSession, listBookings, updateBooking, markAllRead,
-  getDashboardStats, createInvoice, listInvoices, resetDemoData, isDemo,
-} from '../../lib/dataSource';
+  getDashboardStats, createInvoice, listInvoices,
+} from '../../lib/api';
 import { invoiceUrl, invoiceState, invoiceStatus, STATUS_LABEL, STATUS_TONE } from '../../lib/invoiceToken';
 import { formatMoney, relativeTime, initials, truncate } from '../../lib/format';
 import { shootDate, shootTime } from '../../lib/tz';
@@ -102,16 +102,6 @@ function Login({ onIn }) {
           {busy ? 'Checking' : 'Sign in'}
         </button>
 
-        {isDemo && (
-          <p className="ad-login-hint">
-            <AlertCircle width={14} height={14} aria-hidden="true" />
-            <span>
-              Demo — any password gets you in, including an empty one. The real password check is
-              built and runs server-side; it is simply not consulted here, because everything in
-              this dashboard is invented.
-            </span>
-          </p>
-        )}
       </form>
     </div>
   );
@@ -303,12 +293,6 @@ export default function Admin() {
         </div>
 
         <div className="ad-side-foot">
-          {isDemo && (
-            <button type="button" className="ad-reset"
-              onClick={async () => { await resetDemoData(); refresh(); say('Demo data reset.'); }}>
-              Reset demo data
-            </button>
-          )}
           <button type="button" className="ad-reset" onClick={async () => { await logout(); setAuthed(false); }}>
             <LogOut01 width={13} height={13} aria-hidden="true" />
             Sign out

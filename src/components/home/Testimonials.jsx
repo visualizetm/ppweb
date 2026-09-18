@@ -1,6 +1,5 @@
 import Star01 from '@untitled-ui/icons-react/build/esm/Star01';
 
-import { isDemo } from '../../lib/dataSource';
 
 /* ===========================================================================
    Testimonials.
@@ -77,12 +76,6 @@ export default function Testimonials() {
             </div>
           )}
 
-          {isDemo && !hasReal && (
-            <p className="ts-demo-note">
-              Deliberately empty. Testimonials are the one thing not seeded with demo data —
-              inventing a review, even as an example, is a risk that is not worth taking.
-            </p>
-          )}
         </div>
       </section>
 

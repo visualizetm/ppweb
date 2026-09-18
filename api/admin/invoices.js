@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { bookings, invoices } from '../_lib/mongo';
+import { bookings, invoices, nextSequence } from '../_lib/mongo';
 import { requireAdmin } from '../_lib/auth';
 
 /* PRODUCTION NOTE
@@ -30,10 +30,13 @@ export default async function handler(req, res) {
     const totalCents = lines.reduce(
       (s, l) => s + Math.max(0, Number(l.amountCents) || 0) * Math.max(1, Number(l.quantity) || 1), 0
     );
-    const count = await col.countDocuments({});
+    /* Atomic counter, not countDocuments(). Two invoices created in the same
+       tick used to receive the same number; number now carries a unique index,
+       so a collision would reject a real invoice rather than just confuse. */
+    const seq = await nextSequence('invoice');
 
     const doc = {
-      number: `INV-${2400 + count + 1}`,
+      number: `INV-${2400 + seq}`,
       bookingId: String(booking._id),
       title: String(title || booking.title).slice(0, 160),
       customerName: booking.contact.name,

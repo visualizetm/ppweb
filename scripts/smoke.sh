@@ -53,16 +53,25 @@ else
   pass "no emoji in src/ or api/"
 fi
 
-# Nothing may call the API directly; everything goes through the dataSource seam.
-# live.js is the one permitted caller; dataSource.js documents the rule in a
-# comment, so both are excluded by name rather than by loosening the pattern.
+# Nothing may call the API directly; everything goes through src/lib/api.js,
+# which is the one permitted caller and is excluded by name.
 STRAY=$(grep -rln "fetch(['\"\`]/api" src --include='*.jsx' --include='*.js' 2>/dev/null \
-        | grep -v -e 'src/lib/sources/live.js' -e 'src/lib/dataSource.js' || true)
+        | grep -v -e 'src/lib/api.js' || true)
 if [ -n "$STRAY" ]; then
-  fail "component calls /api directly instead of using dataSource.js:"
+  fail "component calls /api directly instead of using src/lib/api.js:"
   printf '        %s\n' $STRAY
 else
-  pass "all API access goes through src/lib/dataSource.js"
+  pass "all API access goes through src/lib/api.js"
+fi
+
+# Demo mode is gone. Any surviving reference is a bug, not a leftover comment.
+DEMO=$(grep -rln -e 'VITE_DEMO_MODE' -e 'isDemo' -e 'pp_demo_' -e 'dataSource' \
+       src api 2>/dev/null || true)
+if [ -n "$DEMO" ]; then
+  fail "demo-mode reference survives:"
+  printf '        %s\n' $DEMO
+else
+  pass "no demo-mode references in src/ or api/"
 fi
 
 # Retired accents must not survive a reskin. Checked against the BUILT output,
