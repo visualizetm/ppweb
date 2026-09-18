@@ -20,6 +20,8 @@
    runs. Adding an endpoint means adding a file and one line to ROUTES.
    =========================================================================== */
 
+import { describeDbError } from './_lib/mongo.js';
+
 import availability from './_handlers/availability.js';
 import bookings from './_handlers/bookings.js';
 import content from './_handlers/content.js';
@@ -91,5 +93,25 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'not_found', message: `No API route at /api/${path}` });
   }
 
-  return route(req, res);
+  /* ONE error boundary for every handler.
+     Without it a thrown database error becomes Vercel's own text/plain crash
+     page: a 500 that carries no information, which the dashboard can only
+     report as "server error". With it, the failure is a JSON 503 whose
+     message says which thing to fix. Only the classification is sent; the
+     underlying error text, which may contain a hostname, stays in the log. */
+  try {
+    return await route(req, res);
+  } catch (err) {
+    console.error(`[api] /api/${path} failed:`, err?.name, err?.message);
+    if (res.headersSent) return undefined;
+
+    const dbMessage = describeDbError(err);
+    if (dbMessage) {
+      return res.status(503).json({ error: 'database_unavailable', message: dbMessage });
+    }
+    return res.status(500).json({
+      error: 'handler_failed',
+      message: `The ${path} endpoint hit an unexpected error${err?.name ? ` (${err.name})` : ''}.`,
+    });
+  }
 }

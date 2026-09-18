@@ -28,6 +28,7 @@ import Star01 from '@untitled-ui/icons-react/build/esm/Star01';
 import HelpCircle from '@untitled-ui/icons-react/build/esm/HelpCircle';
 import UploadCloud01 from '@untitled-ui/icons-react/build/esm/UploadCloud01';
 import ClockRewind from '@untitled-ui/icons-react/build/esm/ClockRewind';
+import Menu01 from '@untitled-ui/icons-react/build/esm/Menu01';
 
 import {
   login, logout, getSession, listBookings, updateBooking, markAllRead,
@@ -199,6 +200,8 @@ export default function Admin() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [publishOpen, setPublishOpen] = useState(false);
+  /* Mobile only: the sidebar becomes a drawer behind a Menu button. */
+  const [menuOpen, setMenuOpen] = useState(false);
   const [sessionNotice, setSessionNotice] = useState(null);
   const [loadErrors, setLoadErrors] = useState([]);
   const searchRef = useRef(null);
@@ -260,11 +263,21 @@ export default function Admin() {
         e.preventDefault();
         searchRef.current?.focus();
       }
-      if (e.key === 'Escape') setOpenId(null);
+      if (e.key === 'Escape') { setOpenId(null); setMenuOpen(false); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  /* Every sidebar navigation goes through here. On a phone the sidebar is a
+     drawer, so it closes, and the page scrolls to the top so the screen you
+     just chose is the first thing visible rather than a full scroll away. */
+  const go = (id) => {
+    setView(id);
+    setOpenId(null);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0 });
+  };
 
   const say = (msg) => {
     setToast(msg);
@@ -302,8 +315,43 @@ export default function Admin() {
 
   return (
     <div className="ad">
+      {/* --------------------------------------------- mobile top bar --- */}
+      {/* Only rendered at phone widths (CSS). Everything a phone needs at
+          arm's reach: where you are, the menu, and publish. */}
+      <header className="ad-topbar">
+        <button
+          type="button"
+          className="ad-topbar-menu"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-expanded={menuOpen}
+          aria-controls="ad-drawer"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {menuOpen ? <XClose width={18} height={18} aria-hidden="true" /> : <Menu01 width={18} height={18} aria-hidden="true" />}
+        </button>
+        <span className="ad-topbar-title">
+          {open
+            ? open.contact?.name || 'Booking'
+            : view === 'publish-history'
+              ? 'Publish history'
+              : NAV_1.concat(NAV_2, NAV_CONTENT).find((x) => x.id === view)?.label || 'Dashboard'}
+        </span>
+        <button
+          type="button"
+          className={`cf-btn cf-btn-primary ad-topbar-publish ${content.pendingCount ? '' : 'cf-publish-idle'}`}
+          onClick={() => setPublishOpen(true)}
+          disabled={!content.pendingCount}
+          aria-label={content.pendingCount ? `Publish ${content.pendingCount} changes` : 'Nothing to publish'}
+        >
+          <UploadCloud01 width={15} height={15} aria-hidden="true" />
+          {content.pendingCount ? content.pendingCount : ''}
+        </button>
+      </header>
+
+      {menuOpen && <div className="ad-scrim" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
+
       {/* --------------------------------------------------- sidebar --- */}
-      <aside className="ad-side">
+      <aside id="ad-drawer" className={`ad-side ${menuOpen ? 'ad-side-open' : ''}`}>
         <div className="ad-side-top">
           <span className="ad-mark" aria-hidden="true" />
           <span className="ad-side-name">Paps</span>
@@ -326,7 +374,7 @@ export default function Admin() {
           {NAV_1.map((n) => (
             <button key={n.id} type="button"
               className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
-              onClick={() => { setView(n.id); setOpenId(null); }}>
+              onClick={() => go(n.id)}>
               <n.icon width={16} height={16} aria-hidden="true" />
               {n.label}
             </button>
@@ -337,7 +385,7 @@ export default function Admin() {
           {NAV_2.map((n) => (
             <button key={n.id} type="button"
               className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
-              onClick={() => { setView(n.id); setOpenId(null); }}>
+              onClick={() => go(n.id)}>
               <n.icon width={16} height={16} aria-hidden="true" />
               {n.label}
               {n.badge && unread > 0 && <span className="ad-count">{unread}</span>}
@@ -350,7 +398,7 @@ export default function Admin() {
           {NAV_CONTENT.map((n) => (
             <button key={n.id} type="button"
               className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
-              onClick={() => { setView(n.id); setOpenId(null); }}>
+              onClick={() => go(n.id)}>
               <n.icon width={16} height={16} aria-hidden="true" />
               {n.label}
               {content.byId.get(n.id)?.changed?.length > 0 && (
@@ -361,7 +409,7 @@ export default function Admin() {
 
           <button type="button"
             className={`ad-nav-item ${view === 'publish-history' ? 'ad-nav-on' : ''}`}
-            onClick={() => { setView('publish-history'); setOpenId(null); }}>
+            onClick={() => go('publish-history')}>
             <ClockRewind width={16} height={16} aria-hidden="true" />
             Publish history
           </button>

@@ -237,10 +237,46 @@ export default function AdminStyles() {
         .ad-cols { grid-template-columns: 1fr; }
         .ad-detail-grid, .ad-msgs { grid-template-columns: 1fr; }
       }
+      /* --- mobile top bar + drawer -------------------------------------
+         Desktop keeps the sticky sidebar column. Below 860px the sidebar
+         used to stack ABOVE the content, which put every page a full scroll
+         away and made switching pages a scroll back up. Now the sidebar is a
+         drawer behind a Menu button and the content starts under a short
+         sticky bar. */
+      .ad-topbar { display: none; }
+      .ad-scrim { display: none; }
+
       @media (max-width: 860px) {
-        .ad { grid-template-columns: 1fr; }
-        .ad-side { position: static; height: auto; flex-direction: column; }
-        .ad-main { padding-inline: var(--space-4); }
+        .ad { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+
+        .ad-topbar {
+          position: sticky; top: 0; z-index: 60;
+          display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3);
+          padding: var(--space-2) var(--space-3);
+          background: var(--ground-deep); border-bottom: 1px solid var(--edge-strong);
+        }
+        .ad-topbar-menu {
+          display: grid; place-items: center; width: 40px; height: 40px;
+          border: 1px solid var(--edge); border-radius: var(--radius); background: var(--panel); color: var(--ink);
+        }
+        .ad-topbar-title {
+          min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          font-family: var(--font-display); font-variation-settings: 'wdth' var(--wdth-plate);
+          font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink);
+        }
+        .ad-topbar-publish { height: 40px; padding-inline: var(--space-3); }
+
+        /* The sidebar is a drawer: hidden unless open, then fixed over the page. */
+        .ad-side { display: none; }
+        .ad-side.ad-side-open {
+          display: flex; position: fixed; top: 0; left: 0; bottom: 0; z-index: 80;
+          width: min(320px, 88vw); height: 100dvh; overflow-y: auto;
+          box-shadow: var(--lift-3); border-right: 1px solid var(--edge-strong);
+        }
+        .ad-scrim { display: block; position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.55); }
+        .ad-publish { position: static; margin-inline: 0; }
+
+        .ad-main { padding-inline: var(--space-4); padding-top: var(--space-4); }
         .ad-line { grid-template-columns: 1fr 56px 84px 32px; }
       }
     `}</style>

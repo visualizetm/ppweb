@@ -14,7 +14,15 @@ export async function db() {
     cached.promise = new MongoClient(uri, {
       maxPoolSize: 5,
       serverSelectionTimeoutMS: 8000,
-    }).connect();
+    })
+      .connect()
+      .catch((err) => {
+        /* A failed connect must not stay cached, or one blocked or mistyped
+           attempt poisons every later request in this warm container with
+           the same stale rejection. Clear it so the next request retries. */
+        cached.promise = null;
+        throw err;
+      });
   }
   const client = await cached.promise;
   /* Database name comes from the URI path, so it is configured in one place. */
@@ -63,6 +71,36 @@ async function ensureIndexes(database) {
       { key: { publishedAt: -1 }, name: 'publishedAt_desc' },
     ]),
   ]);
+}
+
+/* ---------------------------------------------------------------------------
+   Plain-language classification of a database failure.
+   ---------------------------------------------------------------------------
+   Used by the API dispatcher to turn a thrown driver error into a JSON reply
+   the dashboard can show. Deliberately coarse: it names WHICH kind of thing
+   is wrong so it can be fixed without opening Vercel, and nothing more. The
+   connection string, hostnames and credentials never appear in the output.
+   --------------------------------------------------------------------------- */
+export function describeDbError(err) {
+  const name = String(err?.name || '');
+  const msg = String(err?.message || '');
+
+  if (msg === 'MONGODB_URI is not set') {
+    return 'The database connection string is not set. Add MONGODB_URI to the project in Vercel and redeploy.';
+  }
+  if (name === 'MongoParseError' || /Invalid (scheme|connection string)/i.test(msg)) {
+    return 'The database connection string is not valid. Check MONGODB_URI in Vercel: it should start with mongodb+srv:// and include the database name.';
+  }
+  if (/bad auth|Authentication failed|auth failed/i.test(msg)) {
+    return 'The database rejected the username or password in MONGODB_URI.';
+  }
+  if (name === 'MongoServerSelectionError' || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|Server selection timed out/i.test(msg)) {
+    return 'The database could not be reached. In MongoDB Atlas, check Network Access allows 0.0.0.0/0, because Vercel functions have no fixed IP address.';
+  }
+  if (name.startsWith('Mongo')) {
+    return `The database returned an error (${name}).`;
+  }
+  return null;
 }
 
 export const bookings = async () => (await db()).collection('bookings');
