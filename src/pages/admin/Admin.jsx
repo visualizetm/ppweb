@@ -100,7 +100,7 @@ if (import.meta.env.DEV) {
 const TABS = ['Overview', 'Bookings', 'Clients', 'Revenue'];
 
 /* ============================================================== login === */
-function Login({ onIn }) {
+function Login({ onIn, notice }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -112,7 +112,10 @@ function Login({ onIn }) {
     const res = await login(password);
     setBusy(false);
     if (res.ok) onIn();
-    else setError(res.message || 'That password was not right.');
+    /* api.js always supplies a message now: the server's own words for a
+       wrong password, or the status and content type for anything else. The
+       fallback here is only reachable if that contract is broken. */
+    else setError(res.message || 'Sign-in failed, and the server gave no reason.');
   };
 
   return (
@@ -134,6 +137,10 @@ function Login({ onIn }) {
           />
         </label>
 
+        {/* A failed session check on page load is shown before a password is
+            even typed. It is the routing or server failure that would
+            otherwise be misread as "wrong password" a moment later. */}
+        {notice && !error && <p className="ad-login-err" role="alert">{notice}</p>}
         {error && <p className="ad-login-err" role="alert">{error}</p>}
 
         <button type="submit" className="btn btn-primary" disabled={busy}>
@@ -192,12 +199,24 @@ export default function Admin() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [sessionNotice, setSessionNotice] = useState(null);
+  const [loadErrors, setLoadErrors] = useState([]);
   const searchRef = useRef(null);
 
   const content = useContentAdmin(authed);
 
   useEffect(() => {
-    getSession().then((r) => setAuthed(Boolean(r.ok && r.session?.authed)));
+    getSession().then((r) => {
+      setAuthed(Boolean(r.ok && r.session?.authed));
+      /* A 401 here just means "not signed in", which is the normal state of a
+         fresh login page. Anything that is not a JSON answer from the API is a
+         real problem and is worth showing before a password is typed. */
+      setSessionNotice(
+        !r.ok && (r.kind === 'not-json' || r.kind === 'network')
+          ? `Could not check your session. ${r.message}`
+          : null
+      );
+    });
   }, []);
 
   const refresh = useCallback(async () => {
@@ -205,6 +224,15 @@ export default function Admin() {
     if (b.ok) setBookings(b.items);
     if (s.ok) setStats(s.stats);
     if (i.ok) setInvoices(i.items);
+    /* A failed load used to leave an empty dashboard with no explanation.
+       Each failure is listed with the endpoint and what came back. */
+    setLoadErrors(
+      [
+        !b.ok && `Bookings did not load. ${b.message}`,
+        !s.ok && `Dashboard figures did not load. ${s.message}`,
+        !i.ok && `Invoices did not load. ${i.message}`,
+      ].filter(Boolean)
+    );
     setLoading(false);
   }, [query]);
 
@@ -244,7 +272,7 @@ export default function Admin() {
   };
 
   if (authed === null) return <div className="ad-boot" />;
-  if (!authed) return (<><Login onIn={() => setAuthed(true)} /><AdminStyles /></>);
+  if (!authed) return (<><Login onIn={() => setAuthed(true)} notice={sessionNotice} /><AdminStyles /></>);
 
   const open = bookings.find((b) => b.id === openId);
 
@@ -258,13 +286,13 @@ export default function Admin() {
       if (message) say(message);
     } else {
       refresh();
-      say('That did not save. Try again.');
+      say(`That did not save. ${res.message}`);
     }
   };
 
   const revertSection = async (sectionId) => {
     const res = await content.revert(sectionId);
-    say(res?.ok ? 'Draft discarded. This section matches the live site again.' : 'Could not discard that draft.');
+    say(res?.ok ? 'Draft discarded. This section matches the live site again.' : `Could not discard that draft. ${res?.message || ''}`.trim());
   };
 
   const openBooking = (b) => {
@@ -393,6 +421,15 @@ export default function Admin() {
 
       {/* ------------------------------------------------------- main --- */}
       <main className="ad-main">
+        {(loadErrors.length > 0 || content.error) && (
+          <div className="ad-alert" role="alert">
+            {content.error && <p>Site content did not load. {content.error}</p>}
+            {loadErrors.map((m) => (
+              <p key={m}>{m}</p>
+            ))}
+          </div>
+        )}
+
         {open ? (
           <BookingDetail booking={open} onBack={() => setOpenId(null)} onPatch={patch} onSay={say} onRefresh={refresh} />
         ) : view === 'invoices' ? (
@@ -403,6 +440,7 @@ export default function Admin() {
           <GalleriesEditor
             row={content.byId.get('galleries')}
             saving={content.saving}
+            saveError={content.saveErrors.galleries}
             onChange={(next) => content.setDraft('galleries', next)}
             onRevert={revertSection}
             onSay={say}
@@ -412,6 +450,7 @@ export default function Admin() {
             sectionId={view}
             row={content.byId.get(view)}
             saving={content.saving}
+            saveError={content.saveErrors[view]}
             onChange={(next) => content.setDraft(view, next)}
             onRevert={revertSection}
           />
@@ -544,7 +583,7 @@ export default function Admin() {
             say(
               res.ok
                 ? `Published. ${sectionIds.length} ${sectionIds.length === 1 ? 'section is' : 'sections are'} now live.`
-                : res.message || 'That publish did not go through.'
+                : `That publish did not go through. ${res.message}`
             );
           }}
         />
@@ -610,7 +649,7 @@ function BookingDetail({ booking, onBack, onPatch, onSay, onRefresh }) {
     const dueDate = new Date(Date.now() + dueDays * 86400000).toISOString();
     const res = await createInvoice({ bookingId: booking.id, lines, kind, dueDate, title: booking.title });
     setBusy(false);
-    if (!res.ok) return onSay('Could not create that invoice.');
+    if (!res.ok) return onSay(`Could not create that invoice. ${res.message}`);
     setMade({ ...res.invoice, amountDueCents: due });
     onSay(`${res.invoice.number} created. Copy the link and send it.`);
     onRefresh();

@@ -17,7 +17,7 @@ export default function AdminStyles() {
         font-weight: 800; text-transform: uppercase; font-size: 1.5rem; color: var(--ink); line-height: 1; }
       .ad-login-sub { margin: -8px 0 0; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.18em;
         text-transform: uppercase; color: var(--ink-soft); }
-      .ad-login-err { margin: 0; color: var(--alert-ink); font-size: 0.85rem; font-weight: 500; }
+      .ad-login-err { margin: 0; color: var(--alert-ink); font-size: 0.85rem; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
       .ad-login-hint { display: flex; gap: var(--space-3); margin: var(--space-2) 0 0; padding-top: var(--space-4);
         border-top: 1px solid var(--edge); font-size: 0.8rem; color: var(--ink-soft); line-height: 1.55; }
       .ad-login-hint svg { flex: none; margin-top: 2px; }

@@ -48,7 +48,7 @@ export default function ImageField({
 
       const res = await uploadImage(blob, { folder, name });
       if (!res.ok) {
-        setError(res.message || 'That upload did not go through.');
+        setError(res.message);
         setNote(null);
         return;
       }

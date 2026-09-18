@@ -25,7 +25,7 @@ import { relativeTime } from '../../lib/format';
 
 /* ====================================================== section editor === */
 
-export function SectionEditor({ sectionId, row, onChange, onRevert, saving }) {
+export function SectionEditor({ sectionId, row, onChange, onRevert, saving, saveError }) {
   const section = getSection(sectionId);
   if (!section || !row) return null;
 
@@ -39,8 +39,14 @@ export function SectionEditor({ sectionId, row, onChange, onRevert, saving }) {
           <h1 className="ad-title">{section.label}</h1>
           <p className="cf-blurb">{section.blurb}</p>
         </div>
-        <SaveState saving={saving} dirty={dirty} />
+        <SaveState saving={saving} dirty={dirty} failed={Boolean(saveError)} />
       </header>
+
+      {saveError && (
+        <div className="ad-alert" role="alert">
+          <p>Your last change was not saved. {saveError}</p>
+        </div>
+      )}
 
       {dirty && (
         <div className="cf-dirty" role="status">
@@ -69,7 +75,15 @@ export function SectionEditor({ sectionId, row, onChange, onRevert, saving }) {
   );
 }
 
-function SaveState({ saving, dirty }) {
+function SaveState({ saving, dirty, failed }) {
+  if (failed && !saving) {
+    return (
+      <span className="cf-save cf-save-failed">
+        <AlertCircle width={13} height={13} aria-hidden="true" />
+        Not saved
+      </span>
+    );
+  }
   if (saving) {
     return (
       <span className="cf-save">
@@ -88,7 +102,7 @@ function SaveState({ saving, dirty }) {
 
 /* ====================================================== gallery editor === */
 
-export function GalleriesEditor({ row, onChange, onRevert, saving, onSay }) {
+export function GalleriesEditor({ row, onChange, onRevert, saving, saveError, onSay }) {
   const [openIndex, setOpenIndex] = useState(null);
 
   const draft = row?.draft || { items: [] };
@@ -152,8 +166,14 @@ export function GalleriesEditor({ row, onChange, onRevert, saving, onSay }) {
             </button>
             <h1 className="ad-title">{gallery.title || 'Untitled gallery'}</h1>
           </div>
-          <SaveState saving={saving} dirty={dirty} />
+          <SaveState saving={saving} dirty={dirty} failed={Boolean(saveError)} />
         </header>
+
+        {saveError && (
+          <div className="ad-alert" role="alert">
+            <p>Your last change was not saved. {saveError}</p>
+          </div>
+        )}
 
         <div className="cf-form">
           {itemFields
@@ -194,13 +214,19 @@ export function GalleriesEditor({ row, onChange, onRevert, saving, onSay }) {
           </p>
         </div>
         <div className="cf-head-tools">
-          <SaveState saving={saving} dirty={dirty} />
+          <SaveState saving={saving} dirty={dirty} failed={Boolean(saveError)} />
           <button type="button" className="cf-btn cf-btn-primary" onClick={add}>
             <Plus width={14} height={14} aria-hidden="true" />
             New gallery
           </button>
         </div>
       </header>
+
+      {saveError && (
+        <div className="ad-alert" role="alert">
+          <p>Your last change was not saved. {saveError}</p>
+        </div>
+      )}
 
       {dirty && (
         <div className="cf-dirty" role="status">

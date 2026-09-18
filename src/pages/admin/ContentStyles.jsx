@@ -57,6 +57,25 @@ export default function ContentStyles() {
         min-width: 0;
       }
 
+      /* --- failure banners -------------------------------------------- */
+      /* Alert tint and ink are an existing verified pair (.badge-alert). */
+      .ad-alert {
+        display: grid;
+        gap: var(--space-2);
+        margin-bottom: var(--space-6);
+        padding: var(--space-3) var(--space-4);
+        border: 1px solid var(--alert-ink);
+        border-radius: var(--radius);
+        background: var(--alert-tint);
+        color: var(--alert-ink);
+        font-size: 0.84rem;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+      }
+      .ad-alert p { margin: 0; }
+
+      .cf-save-failed { color: var(--alert-ink); }
+
       /* --- form ------------------------------------------------------ */
       .cf-form {
         display: grid;

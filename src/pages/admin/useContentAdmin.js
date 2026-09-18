@@ -29,6 +29,9 @@ export default function useContentAdmin(authed) {
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState([]);
   const [error, setError] = useState(null);
+  /* Per-section. A failed autosave used to be invisible: the UI kept saying
+     "Saved as draft" while the write had 500'd. */
+  const [saveErrors, setSaveErrors] = useState({});
 
   /* Pending timers and the latest value per section, so a fast typist gets one
      write per pause rather than one per keystroke. */
@@ -38,7 +41,7 @@ export default function useContentAdmin(authed) {
   const load = useCallback(async () => {
     const res = await getAdminContent();
     if (!res.ok) {
-      setError(res.message || 'Could not load site content.');
+      setError(res.message);
       setLoading(false);
       return;
     }
@@ -102,6 +105,9 @@ export default function useContentAdmin(authed) {
               : s
           )
         );
+        setSaveErrors((prev) => (prev[sectionId] ? { ...prev, [sectionId]: null } : prev));
+      } else {
+        setSaveErrors((prev) => ({ ...prev, [sectionId]: res.message }));
       }
     }, SAVE_DELAY);
   }, []);
@@ -123,7 +129,11 @@ export default function useContentAdmin(authed) {
             : s
         )
       );
+      setSaveErrors((prev) => (prev[sectionId] ? { ...prev, [sectionId]: null } : prev));
+    } else {
+      setSaveErrors((prev) => ({ ...prev, [sectionId]: res.message }));
     }
+    return res;
   }, []);
 
   const revert = useCallback(async (sectionId) => {
@@ -137,8 +147,14 @@ export default function useContentAdmin(authed) {
   const publish = useCallback(
     async (sectionIds) => {
       /* Anything still sitting in a debounce has to land first, or publish
-         would copy a stale draft over the live site. */
-      await Promise.all(sectionIds.map((id) => flush(id)));
+         would copy a stale draft over the live site. If that save fails, stop:
+         publishing anyway would put the server's OLD draft live while the
+         screen shows the new one, which is worse than not publishing. */
+      const flushed = await Promise.all(sectionIds.map((id) => flush(id)));
+      const failed = flushed.find((r) => r && r.ok === false);
+      if (failed) {
+        return { ok: false, message: `Your latest edits could not be saved first. ${failed.message}` };
+      }
       const res = await publishSections(sectionIds);
       if (res.ok) {
         await load();
@@ -170,6 +186,7 @@ export default function useContentAdmin(authed) {
     loading,
     saving,
     error,
+    saveErrors,
     setDraft,
     flush,
     revert,

@@ -331,7 +331,7 @@ export function ImageList({ field, value, onChange, folder = 'galleries', name =
         const { blob } = await prepareImage(files[i]);
         const res = await uploadImage(blob, { folder, name });
         if (res.ok) added.push({ url: res.url, alt: '' });
-        else setError(res.message || 'One of those uploads did not go through.');
+        else setError(`One of those uploads did not go through. ${res.message}`);
       } catch {
         setError('One of those files could not be read as an image.');
       }
