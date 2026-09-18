@@ -49,8 +49,24 @@ export default function AdminStyles() {
         font-size: 0.85rem; font-weight: 500; text-align: left; width: 100%;
         transition: background-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease); }
       .ad-nav-item:hover { background: var(--panel); color: var(--ink); }
-      .ad-nav-on { background: var(--panel-high); border-color: var(--edge-strong); color: var(--ink); box-shadow: var(--lift-1); }
+      /* The active page is ink on ground, the same weight the active tab and
+         pipeline step already use, so the current page reads at a glance. */
+      .ad-nav-on { background: var(--ink); border-color: var(--ink); color: var(--ground); box-shadow: var(--lift-1); }
+      .ad-nav-on:hover { background: var(--ink); color: var(--ground); }
       .ad-nav-rule { display: block; height: 1px; background: var(--edge); margin: var(--space-2) 0; }
+
+      /* Collapsible groups. The toggle is a nav item with a chevron; the
+         children indent one icon width so they read as belonging to it. */
+      .ad-group { display: grid; gap: 2px; }
+      .ad-group-toggle { color: var(--ink); font-weight: 600; }
+      .ad-group-active:not(.ad-nav-on) { background: var(--panel); border-color: var(--edge); }
+      .ad-group-chev { margin-left: auto; display: inline-grid; place-items: center; color: var(--ink-soft); }
+      .ad-group-toggle .ad-dot { margin-left: auto; }
+      .ad-group-toggle .ad-dot + .ad-group-chev { margin-left: 0; }
+      .ad-group-items { display: grid; gap: 2px; padding-left: var(--space-3); margin-left: var(--space-3);
+        border-left: 1px solid var(--edge); }
+      .ad-group-items[hidden] { display: none; }
+      .ad-nav-sub { font-size: 0.82rem; font-weight: 500; padding-block: 6px; }
       .ad-count { margin-left: auto; min-width: 18px; padding: 0 5px; border-radius: 2px; background: var(--primer);
         color: var(--on-primer); font-family: var(--font-mono); font-size: 0.62rem; text-align: center; line-height: 17px; }
 
@@ -73,6 +89,9 @@ export default function AdminStyles() {
       /* --- main --- */
       .ad-main { padding: var(--space-6) var(--space-6) var(--space-16); min-width: 0; }
       .ad-head { margin-bottom: var(--space-6); }
+      .ad-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+      .ad-head-row > div { min-width: 0; }
+      .ad-head-row > .ad-viewall { flex: none; margin-top: var(--space-1); }
       .ad-title { font-family: var(--font-display); font-variation-settings: 'wdth' var(--wdth-display);
         font-weight: 800; text-transform: uppercase; font-size: clamp(1.6rem, 3vw, 2.2rem);
         line-height: 1; color: var(--ink); margin: 0 0 var(--space-4); }
@@ -81,6 +100,27 @@ export default function AdminStyles() {
         background: none; color: var(--ink-soft); font-size: 0.85rem; font-weight: 500; }
       .ad-tab:hover { color: var(--ink); }
       .ad-tab-on { background: var(--ink); color: var(--ground); }
+      .ad-tab-n { margin-left: var(--space-2); font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.7; }
+      .ad-tabs + .ad-table, .ad-tabs + .ad-skel-rows, .ad-tabs + .ad-empty { margin-top: var(--space-5); }
+
+      /* --- bookings table ------------------------------------------------ */
+      .ad-table-bookings tr { cursor: pointer; }
+      .ad-table-bookings tbody tr:hover td { background: var(--panel); }
+      .ad-row-unread .ad-who-name { font-weight: 700; }
+      .ad-row-unread td:first-child { box-shadow: inset 3px 0 0 var(--primer); }
+      .ad-who { display: inline-flex; align-items: center; gap: var(--space-3); min-width: 0; }
+      .ad-who > span:last-child { display: grid; min-width: 0; }
+      .ad-who-name { display: block; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ad-who-sub { font-size: 0.7rem; color: var(--ink-soft); }
+      .ad-badge-inline { margin-left: var(--space-2); }
+
+      /* --- pagination ---------------------------------------------------- */
+      .ad-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+        padding-top: var(--space-4); margin-top: var(--space-2); border-top: 1px solid var(--edge); }
+      .ad-pager-range { font-size: 0.78rem; color: var(--ink-soft); }
+      .ad-pager-btns { display: inline-flex; align-items: center; gap: var(--space-2); }
+      .ad-pager-page { font-size: 0.78rem; color: var(--ink-soft); min-width: 4ch; text-align: center; }
+      .ad-pager .cf-icon-btn:disabled { opacity: 0.4; cursor: default; }
 
       .ad-stats-wrap { margin-bottom: var(--space-8); }
       .ad-stats { gap: var(--space-3); }
@@ -310,6 +350,17 @@ export default function AdminStyles() {
         .ad-table td:nth-child(4) { grid-column: 2; grid-row: 2; justify-self: end; }
         .ad-table td:nth-child(5) { grid-column: 1; grid-row: 3; }
         .ad-table td:nth-child(6) { grid-column: 2; grid-row: 3; justify-self: end; }
+
+        /* Bookings has five columns: client and shoot on the left, status
+           and date on the right, and the open button is dropped because the
+           whole card is already tappable. */
+        .ad-table-bookings td:nth-child(3) { grid-column: 2; grid-row: 1; justify-self: end; }
+        .ad-table-bookings td:nth-child(4) { grid-column: 2; grid-row: 2; justify-self: end; font-size: 0.78rem; }
+        .ad-table-bookings td:nth-child(5) { display: none; }
+        .ad-row-unread td:first-child { box-shadow: none; }
+        .ad-table-bookings tr.ad-row-unread { border-left: 3px solid var(--primer); }
+        .ad-badge-inline { display: none; }
+        .ad-pager { flex-wrap: wrap; }
       }
 
       /* --- skeleton variants (same shimmer as the stat cards) ------------ */

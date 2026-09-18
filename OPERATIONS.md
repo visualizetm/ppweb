@@ -145,7 +145,11 @@ immediately, but the page does not use it until you publish.
 
 ## 6. What Michael can change without a developer
 
-Every screen under **Site content** in the dashboard sidebar.
+Every screen under **Website editor** and **Photo shoots** in the dashboard
+sidebar. The sidebar has four standalone pages (Dashboard, Bookings, Invoices,
+Publish history) and those two collapsible groups; the group holding the page
+you are on opens by itself. Each page has its own address (`#/bookings`,
+`#/hero`), so a page can be bookmarked.
 
 | Screen | Covers |
 | --- | --- |
@@ -207,8 +211,6 @@ emoji appears in `src/` or `api/`.
   still renders from a token in the URL rather than from `getInvoice`, and
   `payInvoice` in `src/lib/api.js` drops the card it is handed. All of this is
   deliberate and scoped to a later pass.
-- **Clients, Inquiries, Analytics and Settings** in the dashboard sidebar are
-  still stubs that render the dashboard.
 - **The galleries have almost no photographs.** Nine galleries, three covers,
   no full sets. The upload path now exists; the photographs still have to go
   through it.

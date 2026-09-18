@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Grid01 from '@untitled-ui/icons-react/build/esm/Grid01';
 import Calendar from '@untitled-ui/icons-react/build/esm/Calendar';
-import Users01 from '@untitled-ui/icons-react/build/esm/Users01';
 import CreditCard01 from '@untitled-ui/icons-react/build/esm/CreditCard01';
 import MessageSquare01 from '@untitled-ui/icons-react/build/esm/MessageSquare01';
 import Image03 from '@untitled-ui/icons-react/build/esm/Image03';
-import BarChart01 from '@untitled-ui/icons-react/build/esm/BarChart01';
-import Settings01 from '@untitled-ui/icons-react/build/esm/Settings01';
 import SearchLg from '@untitled-ui/icons-react/build/esm/SearchLg';
 import Lock01 from '@untitled-ui/icons-react/build/esm/Lock01';
 import LogOut01 from '@untitled-ui/icons-react/build/esm/LogOut01';
@@ -29,6 +26,11 @@ import HelpCircle from '@untitled-ui/icons-react/build/esm/HelpCircle';
 import UploadCloud01 from '@untitled-ui/icons-react/build/esm/UploadCloud01';
 import ClockRewind from '@untitled-ui/icons-react/build/esm/ClockRewind';
 import Menu01 from '@untitled-ui/icons-react/build/esm/Menu01';
+import Globe02 from '@untitled-ui/icons-react/build/esm/Globe02';
+import Camera01 from '@untitled-ui/icons-react/build/esm/Camera01';
+import ChevronDown from '@untitled-ui/icons-react/build/esm/ChevronDown';
+import ChevronRight from '@untitled-ui/icons-react/build/esm/ChevronRight';
+import ChevronLeft from '@untitled-ui/icons-react/build/esm/ChevronLeft';
 
 import {
   login, logout, getSession, listBookings, updateBooking, markAllRead,
@@ -61,35 +63,65 @@ export const PIPELINE = [
   'new', 'reviewing', 'quote sent', 'deposit paid', 'scheduled', 'shot', 'delivered',
 ];
 
-const NAV_1 = [
+/* ===========================================================================
+   Navigation.
+   ---------------------------------------------------------------------------
+   Four standalone screens, then two collapsible groups. The audit before this
+   restructure found that Bookings, Clients, Inquiries, Analytics and Settings
+   all rendered the Dashboard body with a different heading, and that the
+   Dashboard's own Overview / Bookings / Clients / Revenue tab row changed
+   nothing on screen. Bookings is now a real screen; the other four and the
+   tab row are gone rather than hidden.
+
+   Each item's id doubles as its hash route (#/bookings), so a page can be
+   bookmarked and the group that contains it opens on load.
+   =========================================================================== */
+const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: Grid01 },
-  { id: 'bookings', label: 'Bookings', icon: Calendar },
-  { id: 'clients', label: 'Clients', icon: Users01 },
-];
-
-const NAV_2 = [
-  { id: 'inquiries', label: 'Inquiries', icon: MessageSquare01, badge: true },
+  { id: 'bookings', label: 'Bookings', icon: Calendar, badge: true },
   { id: 'invoices', label: 'Invoices', icon: CreditCard01 },
-  { id: 'analytics', label: 'Analytics', icon: BarChart01 },
-  { id: 'settings', label: 'Settings', icon: Settings01 },
+  { id: 'publish-history', label: 'Publish history', icon: ClockRewind },
+  {
+    group: 'website',
+    label: 'Website editor',
+    icon: Globe02,
+    items: [
+      { id: 'hero', label: 'Hero', icon: Home02 },
+      { id: 'home', label: 'Home sections', icon: LayoutAlt01 },
+      { id: 'about', label: 'About', icon: User03 },
+      { id: 'testimonials', label: 'Testimonials', icon: Star01 },
+      { id: 'faq', label: 'FAQ', icon: HelpCircle },
+      { id: 'contact', label: 'Contact', icon: Mail01 },
+      { id: 'announcement', label: 'Announcement bar', icon: Announcement01 },
+    ],
+  },
+  {
+    group: 'shoots',
+    label: 'Photo shoots',
+    icon: Camera01,
+    items: [
+      { id: 'galleries', label: 'Galleries', icon: Image03 },
+      { id: 'services', label: 'Pricing', icon: Tag01 },
+    ],
+  },
 ];
 
-/* Everything Michael edits himself. The ids match section ids in
-   shared/content-schema.js; NAV_CONTENT is asserted against SECTION_IDS below
-   so adding a section without adding it here fails loudly in development. */
-const NAV_CONTENT = [
-  { id: 'galleries', label: 'Galleries', icon: Image03 },
-  { id: 'announcement', label: 'Announcement bar', icon: Announcement01 },
-  { id: 'hero', label: 'Hero', icon: Home02 },
-  { id: 'home', label: 'Home sections', icon: LayoutAlt01 },
-  { id: 'services', label: 'Pricing', icon: Tag01 },
-  { id: 'about', label: 'About page', icon: User03 },
-  { id: 'testimonials', label: 'Testimonials', icon: Star01 },
-  { id: 'faq', label: 'FAQ', icon: HelpCircle },
-  { id: 'contact', label: 'Contact details', icon: Mail01 },
-];
+const ALL_ITEMS = NAV.flatMap((n) => (n.items ? n.items : [n]));
+const NAV_CONTENT = ALL_ITEMS.filter((n) => SECTION_IDS.includes(n.id));
+const groupOf = (id) => NAV.find((n) => n.items && n.items.some((i) => i.id === id))?.group || null;
+const labelOf = (id) => ALL_ITEMS.find((n) => n.id === id)?.label || 'Dashboard';
+
+/* Hash routing. Unknown or retired ids (clients, inquiries, analytics,
+   settings) land on the dashboard and the hash is rewritten, so an old
+   bookmark redirects cleanly instead of rendering nothing. */
+const viewFromHash = () => {
+  const id = (window.location.hash || '').replace(/^#\/?/, '');
+  return ALL_ITEMS.some((n) => n.id === id) ? id : 'dashboard';
+};
 
 const CONTENT_VIEWS = new Set(NAV_CONTENT.map((n) => n.id));
+
+const PAGE_SIZE = 20;
 
 if (import.meta.env.DEV) {
   const missing = SECTION_IDS.filter((id) => !CONTENT_VIEWS.has(id));
@@ -98,7 +130,6 @@ if (import.meta.env.DEV) {
   }
 }
 
-const TABS = ['Overview', 'Bookings', 'Clients', 'Revenue'];
 
 /* ============================================================== login === */
 function Login({ onIn, notice }) {
@@ -190,8 +221,10 @@ function Curve({ series = [] }) {
 /* ============================================================== main ===== */
 export default function Admin() {
   const [authed, setAuthed] = useState(null);
-  const [view, setView] = useState('dashboard');
-  const [tab, setTab] = useState('Overview');
+  const [view, setView] = useState(viewFromHash);
+  /* Which groups are open. The group holding the active page is always
+     opened, so you never have to hunt for the page you are already on. */
+  const [openGroups, setOpenGroups] = useState(() => new Set([groupOf(viewFromHash())].filter(Boolean)));
   const [query, setQuery] = useState('');
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState(null);
@@ -207,6 +240,35 @@ export default function Admin() {
   const searchRef = useRef(null);
 
   const content = useContentAdmin(authed);
+
+  useEffect(() => {
+    const wanted = `#/${view}`;
+    if (window.location.hash !== wanted) window.history.replaceState(null, '', wanted);
+    const g = groupOf(view);
+    if (g) setOpenGroups((prev) => (prev.has(g) ? prev : new Set([...prev, g])));
+  }, [view]);
+
+  useEffect(() => {
+    /* Back/forward or a typed hash. An unknown id lands on the dashboard and
+       the hash is corrected even when the dashboard was already showing. A
+       hash change also closes an open booking, since the URL now names a page. */
+    const onHash = () => {
+      const next = viewFromHash();
+      if (window.location.hash !== `#/${next}`) window.history.replaceState(null, '', `#/${next}`);
+      setView(next);
+      setOpenId(null);
+      setMenuOpen(false);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const toggleGroup = (g) =>
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(g)) next.delete(g); else next.add(g);
+      return next;
+    });
 
   useEffect(() => {
     getSession().then((r) => {
@@ -330,11 +392,7 @@ export default function Admin() {
           {menuOpen ? <XClose width={18} height={18} aria-hidden="true" /> : <Menu01 width={18} height={18} aria-hidden="true" />}
         </button>
         <span className="ad-topbar-title">
-          {open
-            ? open.contact?.name || 'Booking'
-            : view === 'publish-history'
-              ? 'Publish history'
-              : NAV_1.concat(NAV_2, NAV_CONTENT).find((x) => x.id === view)?.label || 'Dashboard'}
+          {open ? open.contact?.name || 'Booking' : labelOf(view)}
         </span>
         <button
           type="button"
@@ -371,50 +429,49 @@ export default function Admin() {
         </div>
 
         <nav className="ad-nav" aria-label="Sections">
-          {NAV_1.map((n) => (
-            <button key={n.id} type="button"
-              className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
-              onClick={() => go(n.id)}>
-              <n.icon width={16} height={16} aria-hidden="true" />
-              {n.label}
-            </button>
-          ))}
-
-          <span className="ad-nav-rule" role="separator" />
-
-          {NAV_2.map((n) => (
-            <button key={n.id} type="button"
-              className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
-              onClick={() => go(n.id)}>
-              <n.icon width={16} height={16} aria-hidden="true" />
-              {n.label}
-              {n.badge && unread > 0 && <span className="ad-count">{unread}</span>}
-            </button>
-          ))}
-
-          <span className="ad-nav-rule" role="separator" />
-          <span className="ad-nav-group">Site content</span>
-
-          {NAV_CONTENT.map((n) => (
-            <button key={n.id} type="button"
-              className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
-              onClick={() => go(n.id)}>
-              <n.icon width={16} height={16} aria-hidden="true" />
-              {n.label}
-              {content.byId.get(n.id)?.changed?.length > 0 && (
-                <span className="ad-dot" title="Unpublished changes" aria-label="Unpublished changes" />
-              )}
-            </button>
-          ))}
-
-          <button type="button"
-            className={`ad-nav-item ${view === 'publish-history' ? 'ad-nav-on' : ''}`}
-            onClick={() => go('publish-history')}>
-            <ClockRewind width={16} height={16} aria-hidden="true" />
-            Publish history
-          </button>
-
-          <span className="ad-nav-rule" role="separator" />
+          {NAV.map((n) =>
+            n.items ? (
+              <div key={n.group} className={`ad-group ${openGroups.has(n.group) ? 'ad-group-open' : ''}`}>
+                <button
+                  type="button"
+                  className={`ad-nav-item ad-group-toggle ${n.items.some((i) => i.id === view) ? 'ad-group-active' : ''}`}
+                  onClick={() => toggleGroup(n.group)}
+                  aria-expanded={openGroups.has(n.group)}
+                  aria-controls={`ad-group-${n.group}`}
+                >
+                  <n.icon width={16} height={16} aria-hidden="true" />
+                  {n.label}
+                  {n.items.some((i) => content.byId.get(i.id)?.changed?.length > 0) && !openGroups.has(n.group) && (
+                    <span className="ad-dot" title="Unpublished changes" aria-label="Unpublished changes" />
+                  )}
+                  <span className="ad-group-chev" aria-hidden="true">
+                    {openGroups.has(n.group) ? <ChevronDown width={14} height={14} /> : <ChevronRight width={14} height={14} />}
+                  </span>
+                </button>
+                <div id={`ad-group-${n.group}`} className="ad-group-items" hidden={!openGroups.has(n.group)}>
+                  {n.items.map((i) => (
+                    <button key={i.id} type="button"
+                      className={`ad-nav-item ad-nav-sub ${view === i.id ? 'ad-nav-on' : ''}`}
+                      onClick={() => go(i.id)}>
+                      <i.icon width={15} height={15} aria-hidden="true" />
+                      {i.label}
+                      {content.byId.get(i.id)?.changed?.length > 0 && (
+                        <span className="ad-dot" title="Unpublished changes" aria-label="Unpublished changes" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <button key={n.id} type="button"
+                className={`ad-nav-item ${view === n.id ? 'ad-nav-on' : ''}`}
+                onClick={() => go(n.id)}>
+                <n.icon width={16} height={16} aria-hidden="true" />
+                {n.label}
+                {n.badge && unread > 0 && <span className="ad-count">{unread}</span>}
+              </button>
+            )
+          )}
         </nav>
 
 
@@ -480,6 +537,10 @@ export default function Admin() {
 
         {open ? (
           <BookingDetail booking={open} onBack={() => setOpenId(null)} onPatch={patch} onSay={say} onRefresh={refresh} />
+        ) : view === 'bookings' ? (
+          <BookingsView bookings={bookings} loading={loading} query={query} unread={unread}
+            onOpen={openBooking}
+            onMarkAll={async () => { await markAllRead(); refresh(); say('All marked read.'); }} />
         ) : view === 'invoices' ? (
           <InvoicesView invoices={invoices} onSay={say} loading={loading} />
         ) : view === 'publish-history' ? (
@@ -507,14 +568,9 @@ export default function Admin() {
         ) : (
           <>
             <header className="ad-head">
-              <h1 className="ad-title">{NAV_1.concat(NAV_2).find((n) => n.id === view)?.label || 'Dashboard'}</h1>
-              <div className="ad-tabs" role="tablist">
-                {TABS.map((t) => (
-                  <button key={t} role="tab" aria-selected={tab === t} type="button"
-                    className={`ad-tab ${tab === t ? 'ad-tab-on' : ''}`} onClick={() => setTab(t)}>
-                    {t}
-                  </button>
-                ))}
+              <div>
+                <h1 className="ad-title">Dashboard</h1>
+                <p className="cf-blurb">Today across bookings, invoices and the site.</p>
               </div>
             </header>
 
@@ -538,13 +594,10 @@ export default function Admin() {
             <div className="ad-cols">
               <section className="ad-feed-col">
                 <div className="ad-section-head">
-                  <h2 className="ad-h2">{query ? `Matching “${query}”` : 'Bookings'}</h2>
-                  {unread > 0 && (
-                    <button type="button" className="ad-viewall"
-                      onClick={async () => { await markAllRead(); refresh(); say('All marked read.'); }}>
-                      Mark all read
-                    </button>
-                  )}
+                  <h2 className="ad-h2">{query ? `Matching “${query}”` : 'Recent bookings'}</h2>
+                  <button type="button" className="ad-viewall" onClick={() => go('bookings')}>
+                    View all{bookings.length > 6 ? ` (${bookings.length})` : ''}
+                  </button>
                 </div>
 
                 {loading ? (
@@ -560,7 +613,7 @@ export default function Admin() {
                   </div>
                 ) : (
                   <ul className="ad-feed">
-                    {bookings.map((b) => (
+                    {bookings.slice(0, 6).map((b) => (
                       <li key={b.id}>
                         <button type="button" className={`ad-card ${!b.read ? 'ad-card-unread' : ''}`} onClick={() => openBooking(b)}>
                           <span className="ad-card-top">
@@ -913,7 +966,125 @@ function suggestLines(booking) {
 }
 
 /* ==================================================== invoices view ===== */
+/* ======================================================== bookings ======= */
+
+/* Status tabs, mapped to the real pipeline. "All" first, like the reference. */
+const BOOKING_TABS = [
+  { id: 'all', label: 'All', match: () => true },
+  { id: 'new', label: 'New', match: (s) => s === 'new' },
+  { id: 'quoted', label: 'Quoted', match: (s) => s === 'reviewing' || s === 'quote sent' },
+  { id: 'booked', label: 'Booked', match: (s) => s === 'deposit paid' || s === 'scheduled' },
+  { id: 'done', label: 'Done', match: (s) => s === 'shot' || s === 'delivered' },
+  { id: 'cancelled', label: 'Cancelled', match: (s) => s === 'cancelled' },
+];
+
+function Pager({ page, pages, onPage, total, from, to }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="ad-pager">
+      <span className="ad-pager-range">{from}–{to} of {total}</span>
+      <span className="ad-pager-btns">
+        <button type="button" className="cf-icon-btn" onClick={() => onPage(page - 1)} disabled={page <= 1} aria-label="Previous page">
+          <ChevronLeft width={15} height={15} aria-hidden="true" />
+        </button>
+        <span className="ad-pager-page data">{page} / {pages}</span>
+        <button type="button" className="cf-icon-btn" onClick={() => onPage(page + 1)} disabled={page >= pages} aria-label="Next page">
+          <ChevronRight width={15} height={15} aria-hidden="true" />
+        </button>
+      </span>
+    </div>
+  );
+}
+
+function BookingsView({ bookings, loading, query, unread, onOpen, onMarkAll }) {
+  const [tab, setTab] = useState('all');
+  const [page, setPage] = useState(1);
+
+  const current = BOOKING_TABS.find((t) => t.id === tab) || BOOKING_TABS[0];
+  const filtered = bookings.filter((b) => current.match(b.status));
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pages);
+  const rows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pick = (id) => { setTab(id); setPage(1); };
+
+  return (
+    <>
+      <header className="ad-head ad-head-row">
+        <div>
+          <h1 className="ad-title">Bookings</h1>
+          <p className="cf-blurb">{query ? `Matching “${query}”` : 'Every request, newest first. Open one to quote it or move it along.'}</p>
+        </div>
+        {unread > 0 && (
+          <button type="button" className="ad-viewall" onClick={onMarkAll}>Mark all read</button>
+        )}
+      </header>
+
+      <div className="ad-tabs" role="tablist" aria-label="Filter bookings by status">
+        {BOOKING_TABS.map((t) => {
+          const n = bookings.filter((b) => t.match(b.status)).length;
+          return (
+            <button key={t.id} role="tab" type="button" aria-selected={tab === t.id}
+              className={`ad-tab ${tab === t.id ? 'ad-tab-on' : ''}`} onClick={() => pick(t.id)}>
+              {t.label}<span className="ad-tab-n">{n}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {loading ? (
+        <SkeletonRows count={5} />
+      ) : !rows.length ? (
+        <div className="ad-empty ad-empty-page">
+          <h3>{tab === 'all' ? 'No bookings yet' : `Nothing ${current.label.toLowerCase()}`}</h3>
+          <p>{tab === 'all' ? 'When someone sends a booking it lands here first.' : 'Try another tab.'}</p>
+        </div>
+      ) : (
+        <>
+          <table className="ad-table ad-table-bookings">
+            <thead>
+              <tr><th>Client</th><th>Shoot</th><th>Status</th><th>When</th><th className="ad-r" /></tr>
+            </thead>
+            <tbody>
+              {rows.map((b) => (
+                <tr key={b.id} className={!b.read ? 'ad-row-unread' : ''} onClick={() => onOpen(b)}>
+                  <td>
+                    <span className="ad-who">
+                      <Avatar name={b.contact.name} size={26} />
+                      <span>
+                        <span className="ad-who-name">{b.contact.name}</span>
+                        <span className="ad-who-sub data">{b.ref}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span className="ad-who-name">{b.title}</span>
+                    {b.packageSlug && <span className="badge ad-badge-inline">{b.packageSlug}</span>}
+                  </td>
+                  <td><span className={`badge ${statusTone(b.status)}`}>{b.status}</span></td>
+                  <td className="ad-muted">{b.scheduledAt ? shootDate(b.scheduledAt) : relativeTime(b.createdAt)}</td>
+                  <td className="ad-r">
+                    <button type="button" className="cf-icon-btn" aria-label={`Open ${b.contact.name}`} onClick={(e) => { e.stopPropagation(); onOpen(b); }}>
+                      <ChevronRight width={16} height={16} aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pager page={safePage} pages={pages} onPage={setPage} total={filtered.length}
+            from={(safePage - 1) * PAGE_SIZE + 1} to={Math.min(safePage * PAGE_SIZE, filtered.length)} />
+        </>
+      )}
+    </>
+  );
+}
+
 function InvoicesView({ invoices, onSay, loading }) {
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(invoices.length / PAGE_SIZE));
+  const safePage = Math.min(page, pages);
+  const rows = invoices.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   /* Skeleton while the first load is in flight, so the "No invoices yet"
      empty state never flashes before the real list arrives. */
   if (loading) {
@@ -940,7 +1111,7 @@ function InvoicesView({ invoices, onSay, loading }) {
           <tr><th>Number</th><th>Client</th><th>Status</th><th className="ad-r">Amount</th><th>Age</th><th /></tr>
         </thead>
         <tbody>
-          {invoices.map((inv) => {
+          {rows.map((inv) => {
             const st = invoiceStatus(inv, inv.state);
             return (
               <tr key={inv.id}>
@@ -960,6 +1131,8 @@ function InvoicesView({ invoices, onSay, loading }) {
           })}
         </tbody>
       </table>
+      <Pager page={safePage} pages={pages} onPage={setPage} total={invoices.length}
+        from={(safePage - 1) * PAGE_SIZE + 1} to={Math.min(safePage * PAGE_SIZE, invoices.length)} />
     </>
   );
 }
