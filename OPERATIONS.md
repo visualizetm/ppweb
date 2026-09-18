@@ -82,10 +82,25 @@ file per endpoint this project needed sixteen, so the build succeeded and the
 `Deploying outputs...`. The limit is checked while functions are packaged, which
 is after `vite build` has already reported success.
 
+Routing to it is **explicit**, in `vercel.json`:
+
+```json
+{ "source": "/api/:path*", "destination": "/api/index?__route=:path" }
+```
+
+That rule exists because the function was first called `api/[...route].js`, and
+a bracketed catch-all filename is a Next.js convention that a plain Vite project
+does not route. Every API request 404'd with an HTML error page, which the
+browser could not parse as JSON, so the dashboard showed a generic
+"Something went wrong" for what looked like a password problem. The build was
+green throughout. `api/index.js` is an ordinary filename plus an ordinary
+rewrite, and depends on no filename interpretation at all.
+
 Adding an endpoint is a file in `api/_handlers/` plus one line in the `ROUTES`
 map. A leading underscore tells Vercel not to route a path, which is what keeps
 `_handlers/` and `_lib/` out of the function count. `scripts/smoke.sh` fails the
-build if that count ever climbs back above twelve.
+build if that count climbs back above twelve, and `scripts/check-routing.mjs`
+fails it if any endpoint stops being reachable.
 
 ## 4. Collections
 

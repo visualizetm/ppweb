@@ -75,6 +75,17 @@ else
   pass "api/ creates $FNCOUNT serverless function(s), within the 12 limit"
 fi
 
+# Every API endpoint must actually be reachable through vercel.json. A green
+# build says nothing about this: the API once compiled perfectly and 404'd on
+# every request because it relied on a bracketed catch-all filename that a
+# plain Vite project does not route.
+if node scripts/check-routing.mjs >/tmp/pp-routing.log 2>&1; then
+  pass "every api endpoint resolves through vercel.json"
+else
+  fail "api routing is broken; requests would 404 with an HTML page"
+  grep -E '^\s+FAIL' /tmp/pp-routing.log | head -6
+fi
+
 # Demo mode is gone. Any surviving reference is a bug, not a leftover comment.
 DEMO=$(grep -rln -e 'VITE_DEMO_MODE' -e 'isDemo' -e 'pp_demo_' -e 'dataSource' \
        src api 2>/dev/null || true)

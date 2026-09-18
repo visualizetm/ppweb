@@ -62,14 +62,28 @@ const ROUTES = {
   'admin/upload': adminUpload,
 };
 
-export default async function handler(req, res) {
-  /* Vercel puts the matched segments in req.query.route. Falling back to the
-     URL keeps this function runnable by anything that calls it directly,
-     which is what the local QA harness does. */
-  const segments = Array.isArray(req.query?.route)
-    ? req.query.route
-    : String(req.url || '').split('?')[0].replace(/^\/api\/?/, '').split('/');
+/**
+ * Works out which endpoint was asked for, from three sources in order of
+ * trust. Deliberately belt and braces: the routing bug this replaced was
+ * caused by relying on exactly one mechanism and assuming it worked.
+ *
+ *   __route   the rewrite in vercel.json, which is what production uses
+ *   route     a bracketed catch-all, if the platform ever populates it
+ *   req.url   direct invocation, which is what the local harness does
+ */
+function routeFrom(req) {
+  const q = req.query || {};
 
+  if (typeof q.__route === 'string' && q.__route) return q.__route.split('/');
+  if (Array.isArray(q.__route)) return q.__route;
+  if (Array.isArray(q.route)) return q.route;
+  if (typeof q.route === 'string' && q.route) return q.route.split('/');
+
+  return String(req.url || '').split('?')[0].replace(/^\/api\/?/, '').split('/');
+}
+
+export default async function handler(req, res) {
+  const segments = routeFrom(req);
   const path = segments.filter(Boolean).join('/');
   const route = ROUTES[path];
 
