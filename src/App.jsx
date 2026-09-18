@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AnnouncementBar from './components/AnnouncementBar';
 import useReveal, { useScrollTop } from './lib/useReveal';
+import { isDashboardHost } from './lib/host';
 
 import Home from './pages/Home';
 
@@ -112,6 +113,36 @@ export default function App() {
   useScrollTop();
   useNavHeight();
 
+  /* ---------------------------------------------------------------------
+     dashboard.papsprod.com serves ONE thing: the dashboard, at the root.
+     No marketing routes, no portfolio, no invoice page. Every path lands on
+     it, so an old /admin bookmark still works after the move.
+     --------------------------------------------------------------------- */
+  const onDashboard = isDashboardHost();
+
+  useEffect(() => {
+    if (!onDashboard) return;
+    /* Belt and braces alongside the X-Robots-Tag header in vercel.json. A
+       dashboard has no business in a search index. */
+    let tag = document.head.querySelector('meta[name="robots"]');
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.setAttribute('name', 'robots');
+      document.head.appendChild(tag);
+    }
+    tag.setAttribute('content', 'noindex, nofollow');
+  }, [onDashboard]);
+
+  if (onDashboard) {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="*" element={<Admin />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   /* The dashboard is a different product from the marketing site and gets none
      of its chrome — no navbar, no footer, no page max-width. */
   const isAdmin = pathname.startsWith('/admin');
@@ -123,6 +154,10 @@ export default function App() {
     return (
       <Suspense fallback={<RouteFallback />}>
         <Routes>
+          {/* Kept so the dashboard stays reachable on localhost and on
+              *.vercel.app previews, where a subdomain does not exist. On the
+              real domain vercel.json redirects this to the subdomain before
+              the request ever reaches the app. */}
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/invoice/:token" element={<Invoice />} />
         </Routes>

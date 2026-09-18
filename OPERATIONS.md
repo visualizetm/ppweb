@@ -35,14 +35,40 @@ marked paid from an unauthenticated request.
    already sets the build command, the output directory and the SPA rewrite.
 2. Set the variables above.
 3. Deploy.
-4. Open `/admin` and sign in with `ADMIN_PASSWORD`.
+4. Open the dashboard and sign in with `ADMIN_PASSWORD`: `dashboard.papsprod.com`
+   once the domain below is attached, or `/admin` on the Vercel URL before then.
 
 On the first request the API creates its collections, its indexes, and one
 `siteContent` document per editable section, seeded with the content the site
 shipped with. There is no migration step and nothing to run by hand.
 
-Point `papsprod.com` at the deployment under **Settings, Domains** once you are
-happy with what you see on the Vercel URL.
+### Domains
+
+One project serves both hostnames off the same build. Add both under
+**Settings, Domains**:
+
+| Hostname | Serves |
+| --- | --- |
+| `papsprod.com` (and `www`) | The public site, plus `/invoice/:token` |
+| `dashboard.papsprod.com` | The owner dashboard, at the root |
+
+DNS for the subdomain is a `CNAME` record: `dashboard` pointing at
+`cname.vercel-dns.com`. Vercel shows the exact value when you add the domain,
+and issues the certificate once the record resolves.
+
+Three things happen automatically once both domains are attached:
+
+- `papsprod.com/admin` redirects to `dashboard.papsprod.com`, so old
+  bookmarks keep working (`vercel.json`, `redirects`).
+- The dashboard host is served with `X-Robots-Tag: noindex, nofollow`, and the
+  app sets the matching meta tag, so it cannot be indexed.
+- The admin session cookie is host-only: set on `dashboard.papsprod.com`, it is
+  never sent to `papsprod.com`. Nothing about the dashboard session touches the
+  public site.
+
+On `localhost` and on `*.vercel.app` preview URLs there is no subdomain, so the
+dashboard stays reachable at `/admin` there. That fallback is deliberate: it is
+what makes previews testable.
 
 ## 3. Collections
 
