@@ -233,7 +233,7 @@ function ListField({ field, value, onChange, idPrefix }) {
             <span className="cf-item-title">
               {field.itemLabel} {i + 1}
               {item.title || item.question || item.author
-                ? ` — ${item.title || item.question || item.author}`
+                ? `: ${item.title || item.question || item.author}`
                 : ''}
             </span>
             <div className="cf-item-tools">
