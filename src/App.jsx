@@ -4,20 +4,23 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AnnouncementBar from './components/AnnouncementBar';
-import useReveal, { useScrollTop } from './lib/useReveal';
+import PageTransition from './components/PageTransition';
+import useReveal from './lib/useReveal';
+import { loaders } from './lib/routes';
 import { isDashboardHost } from './lib/host';
 
 import Home from './pages/Home';
 
 /* Interior pages are split out of the initial bundle. The homepage is the one
-   route that must paint fast, so it stays in the main chunk. */
-const Portfolio = lazy(() => import('./pages/Portfolio'));
-const Gallery = lazy(() => import('./pages/Gallery'));
-const About = lazy(() => import('./pages/About'));
-const Services = lazy(() => import('./pages/Services'));
-const Faq = lazy(() => import('./pages/Faq'));
-const Contact = lazy(() => import('./pages/Contact'));
-const Booking = lazy(() => import('./pages/Booking'));
+   route that must paint fast, so it stays in the main chunk. The loaders live
+   in lib/routes.js so the navbar can warm a chunk on hover before the click. */
+const Portfolio = lazy(loaders['/portfolio']);
+const Gallery = lazy(loaders['/portfolio/:slug']);
+const About = lazy(loaders['/about']);
+const Services = lazy(loaders['/services']);
+const Faq = lazy(loaders['/faq']);
+const Contact = lazy(loaders['/contact']);
+const Booking = lazy(loaders['/booking']);
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Admin = lazy(() => import('./pages/admin/Admin'));
 const Invoice = lazy(() => import('./pages/Invoice'));
@@ -110,7 +113,6 @@ function useNavHeight() {
 export default function App() {
   const { pathname } = useLocation();
   useReveal();
-  useScrollTop();
   useNavHeight();
 
   /* ---------------------------------------------------------------------
@@ -173,19 +175,25 @@ export default function App() {
       <AnnouncementBar />
       <Navbar />
       <main id="main" tabIndex={-1}>
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/portfolio/:slug" element={<Gallery />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/booking" element={<Booking />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        {/* The fallback sits inside the transition so a chunk that is still
+            arriving fades in as a loading bar rather than a blank. */}
+        <PageTransition>
+          {(shown) => (
+            <Suspense fallback={<RouteFallback />}>
+              <Routes location={shown}>
+                <Route path="/" element={<Home />} />
+                <Route path="/portfolio" element={<Portfolio />} />
+                <Route path="/portfolio/:slug" element={<Gallery />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/faq" element={<Faq />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/booking" element={<Booking />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          )}
+        </PageTransition>
       </main>
       <Footer />
     </>

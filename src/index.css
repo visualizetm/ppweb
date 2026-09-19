@@ -329,6 +329,9 @@ h6 {
 a {
   color: var(--ink);
   text-decoration: none;
+  /* Every text link eases between its colours; links that animate more
+     (cards, buttons) declare their own transition and override this. */
+  transition: color var(--duration-fast) var(--ease);
 }
 
 ::selection {
@@ -784,6 +787,40 @@ h3,
 
 [data-parallax] { will-change: auto; }
 
+/* ------------------------------------------------- page transition -------
+   Driven by src/components/PageTransition.jsx. The outgoing page fades over
+   --duration-fast, the incoming one rises in over --duration. Opacity and
+   transform only, same as the reveals, so it composites. */
+.pt-leave {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+  pointer-events: none;
+}
+
+.pt-enter {
+  animation: pt-in var(--duration) var(--ease) both;
+}
+
+@keyframes pt-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------------------------------------------------- image arrival ------
+   Driven by src/components/Picture.jsx. A photograph fades up from the same
+   deep tone the labelled placeholder slot uses, instead of popping in. */
+.pic:not(.pic-loaded) {
+  background: var(--ground-deep);
+  border-radius: inherit;
+}
+
+.pic img {
+  opacity: 0;
+  transition: opacity 0.45s var(--ease);
+}
+
+.pic-loaded img { opacity: 1; }
+
 /* --------------------------------------------------- horizontal scroll ---
    Used by any row that scrolls sideways: the date strip, gallery rails, the
    dashboard's stat cards. Momentum on iOS, snap points so it never stops
@@ -890,10 +927,14 @@ h3,
 
   [data-reveal],
   [data-reveal='stagger'] > *,
-  [data-parallax] {
+  [data-parallax],
+  .pt-leave,
+  .pt-enter,
+  .pic img {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+    animation: none !important;
   }
 }
 

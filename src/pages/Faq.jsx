@@ -152,6 +152,7 @@ export default function Faq() {
           text-transform: none;
           letter-spacing: 0;
           line-height: 1.5;
+          transition: background-color var(--duration-fast) var(--ease);
         }
 
         .fq-btn:hover { background: var(--hover-soft); }

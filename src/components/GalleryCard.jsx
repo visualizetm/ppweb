@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import ArrowRight from '@untitled-ui/icons-react/build/esm/ArrowRight';
 
 import Picture from './Picture';
+import { preloadOn } from '../lib/routes';
 
 /* ===========================================================================
    Gallery card.
@@ -15,7 +16,7 @@ export default function GalleryCard({ gallery, eager = false, featured = false }
   const { slug, title, caption, dateLabel, type, cover, coverAlt } = gallery;
 
   return (
-    <Link to={`/portfolio/${slug}`} className={`gc ${featured ? 'gc-featured' : ''}`}>
+    <Link to={`/portfolio/${slug}`} className={`gc ${featured ? 'gc-featured' : ''}`} {...preloadOn(`/portfolio/${slug}`)}>
       <span className="gc-media">
         <Picture
           src={cover}

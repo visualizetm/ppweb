@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 
 /* ===========================================================================
    Scroll behaviour.
@@ -19,6 +18,19 @@ import { useLocation } from 'react-router-dom';
 
    2. PARALLAX — elements with data-parallax drift as they cross the viewport.
 
+   HOW NEW ELEMENTS ARE FOUND
+
+   A MutationObserver on <body> notices when the DOM gains nodes and hands any
+   new reveal or parallax elements to the observers above. This replaced a
+   60ms timer that ran once per route change. That timer was the cause of the
+   "page looks empty until I reload" bug: interior pages are code-split, and
+   on a real connection their chunk arrives well after 60ms, so their
+   sections rendered after the sweep, were never observed, and sat at
+   opacity 0 for good. A reload put the chunk in the HTTP cache, the sweep
+   then won the race, and the bug looked like it had gone away. Watching the
+   DOM instead of the clock means it does not matter when content arrives:
+   from a chunk, from the content API, or from a filter click.
+
    WHY IT DOES NOT CAUSE SCROLL LAG
 
    - Only `transform` and `opacity` are animated. Both are composited; neither
@@ -31,32 +43,46 @@ import { useLocation } from 'react-router-dom';
    - `will-change` is added when an element starts animating and REMOVED when
      it finishes. Leaving it on permanently is the classic cause of a site that
      scrolls fine at first and degrades — each layer costs GPU memory.
+   - The mutation callback does one querySelectorAll, coalesced to a frame,
+     and only when the DOM actually changed. Scrolling changes nothing.
    - Everything is disabled outright under prefers-reduced-motion.
    =========================================================================== */
 
 const REVEAL_SELECTOR = '[data-reveal]';
 const PARALLAX_SELECTOR = '[data-parallax]';
 
-const prefersReduced = () =>
+export const prefersReduced = () =>
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export default function useReveal() {
-  const { pathname } = useLocation();
-
   useEffect(() => {
     if (prefersReduced()) {
-      document
-        .querySelectorAll(`${REVEAL_SELECTOR}, ${PARALLAX_SELECTOR}`)
-        .forEach((el) => el.setAttribute('data-revealed', ''));
-      return undefined;
+      /* The stylesheet already forces these visible under reduced motion; the
+         attribute keeps anything that reads it (tests, styles) consistent. */
+      const mark = () =>
+        document
+          .querySelectorAll(`${REVEAL_SELECTOR}:not([data-revealed]), ${PARALLAX_SELECTOR}:not([data-revealed])`)
+          .forEach((el) => el.setAttribute('data-revealed', ''));
+      mark();
+      const mo = new MutationObserver(mark);
+      mo.observe(document.body, { childList: true, subtree: true });
+      return () => mo.disconnect();
     }
 
     /* ---------------------------------------------------------- reveal --- */
+    /* An element reveals once 12% of it is on screen, OR once REVEAL_PX of
+       it is, whichever comes first. The pixel floor is for tall containers:
+       on a phone the portfolio grid is 3500px tall, so 12% is 420px, and its
+       first card sat fully on screen at opacity 0 until the visitor had
+       scrolled another 130px. The extra low thresholds are what let the
+       observer fire early enough to apply the pixel rule. */
+    const REVEAL_PX = 96;
     const revealObserver = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
+          if (entry.intersectionRatio < 0.12 && entry.intersectionRect.height < REVEAL_PX) continue;
           const el = entry.target;
 
           const delay = Number(el.dataset.revealDelay || 0);
@@ -80,7 +106,9 @@ export default function useReveal() {
           revealObserver.unobserve(el);
         }
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+      /* No bottom inset on the root: with one, a pricing card showing its
+         top 135px on arrival counted as 69px and stayed hidden. */
+      { threshold: [0, 0.02, 0.05, 0.12], rootMargin: '0px' }
     );
 
     /* -------------------------------------------------------- parallax --- */
@@ -123,7 +151,7 @@ export default function useReveal() {
       (entries) => {
         for (const entry of entries) {
           const el = entry.target;
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting && el.isConnected) {
             parallaxEls.add(el);
             el.style.willChange = 'transform';
             attachScroll();
@@ -131,6 +159,7 @@ export default function useReveal() {
             parallaxEls.delete(el);
             el.style.willChange = '';
             el.style.transform = '';
+            if (!el.isConnected) parallaxObserver.unobserve(el);
             detachScroll();
           }
         }
@@ -139,32 +168,47 @@ export default function useReveal() {
       { rootMargin: '20% 0px 20% 0px' }
     );
 
-    /* Timeout, not immediate: on a route change React has updated the location
-       but has not necessarily committed the new tree yet. */
-    const timer = setTimeout(() => {
+    /* ----------------------------------------------------- discovery ----- */
+    /* Everything already in the DOM, then everything that arrives later. A
+       WeakSet stops an element being handed to an observer twice; it holds
+       no strong reference, so removed pages are garbage collected as normal. */
+    const seen = new WeakSet();
+    let sweepFrame = 0;
+
+    const sweep = () => {
+      sweepFrame = 0;
       document.querySelectorAll(REVEAL_SELECTOR).forEach((el) => {
-        if (!el.hasAttribute('data-revealed')) revealObserver.observe(el);
+        if (seen.has(el) || el.hasAttribute('data-revealed')) return;
+        seen.add(el);
+        revealObserver.observe(el);
       });
       document.querySelectorAll(PARALLAX_SELECTOR).forEach((el) => {
+        if (seen.has(el)) return;
+        seen.add(el);
         parallaxObserver.observe(el);
       });
-    }, 60);
+    };
+
+    const requestSweep = () => {
+      if (sweepFrame) return;
+      sweepFrame = requestAnimationFrame(sweep);
+    };
+
+    sweep();
+    const mo = new MutationObserver((records) => {
+      for (const r of records) {
+        if (r.addedNodes.length) { requestSweep(); return; }
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
 
     return () => {
-      clearTimeout(timer);
+      mo.disconnect();
+      if (sweepFrame) cancelAnimationFrame(sweepFrame);
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener('scroll', onScroll);
       revealObserver.disconnect();
       parallaxObserver.disconnect();
     };
-  }, [pathname]);
-}
-
-/** Scrolls to top on route change, but leaves in-page hash links alone. */
-export function useScrollTop() {
-  const { pathname, hash } = useLocation();
-  useEffect(() => {
-    if (hash) return;
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [pathname, hash]);
+  }, []);
 }

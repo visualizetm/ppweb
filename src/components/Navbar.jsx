@@ -6,6 +6,7 @@ import XClose from '@untitled-ui/icons-react/build/esm/XClose';
 import Wordmark from './Wordmark';
 import ThemeToggle from './ThemeToggle';
 import { navLinks } from '../data/site';
+import { preloadOn } from '../lib/routes';
 
 /* ===========================================================================
    Navbar.
@@ -59,6 +60,7 @@ export default function Navbar() {
                 <NavLink
                   to={link.to}
                   className={({ isActive }) => `nv-link ${isActive ? 'nv-link-on' : ''}`}
+                  {...preloadOn(link.to)}
                 >
                   {link.label}
                 </NavLink>
@@ -68,7 +70,7 @@ export default function Navbar() {
 
           <div className="nv-actions">
             <ThemeToggle />
-            <Link to="/booking" className="btn btn-primary btn-sm nv-cta">
+            <Link to="/booking" className="btn btn-primary btn-sm nv-cta" {...preloadOn('/booking')}>
               Book a shoot
             </Link>
             <button
@@ -110,6 +112,7 @@ export default function Navbar() {
               <NavLink
                 to={link.to}
                 className={({ isActive }) => `nv-drawer-link ${isActive ? 'nv-drawer-link-on' : ''}`}
+                {...preloadOn(link.to)}
               >
                 {link.label}
               </NavLink>
@@ -117,7 +120,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <Link to="/booking" className="btn btn-primary nv-drawer-cta">
+        <Link to="/booking" className="btn btn-primary nv-drawer-cta" {...preloadOn('/booking')}>
           Book a shoot
         </Link>
       </aside>
@@ -191,6 +194,8 @@ export default function Navbar() {
           border: 1px solid var(--edge-strong);
           background: var(--glass-bg);
           color: var(--ink);
+          transition: background-color var(--duration-fast) var(--ease),
+            border-color var(--duration-fast) var(--ease);
         }
 
         .nv-close { display: grid; }

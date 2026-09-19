@@ -175,11 +175,20 @@ export default function Booking() {
      deliberately on the next frame, which is when layout has settled.
      scrollIntoView honours the scroll-margin-top set in index.css, so the
      landing position stays tied to the measured nav height. */
+  const firstStep = useRef(true);
   useEffect(() => {
     const el = headingRef.current;
     if (!el) return undefined;
 
     el.focus({ preventScroll: true });
+
+    /* On arrival the page transition has already put the window at the top;
+       scrolling the first heading into view from there would nudge the page
+       a few pixels for no reason. Only later steps scroll. */
+    if (firstStep.current) {
+      firstStep.current = false;
+      return undefined;
+    }
 
     const frame = requestAnimationFrame(() => {
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

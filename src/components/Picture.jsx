@@ -1,9 +1,11 @@
+import { useCallback, useState } from 'react';
+
 /* ===========================================================================
    Picture.
    ---------------------------------------------------------------------------
    Handles the two kinds of image this site now has.
 
-   1. UPLOADED (the normal case from here on). A full URL out of Vercel Blob,
+   1. UPLOADED (the normal case from here on). A full URL out of Cloudinary,
       already resized and re-encoded by the browser before it was sent. One
       file, one <img>, used exactly as given.
 
@@ -19,6 +21,15 @@
 
    When `src` is empty it renders the labelled placeholder slot instead, so a
    page ships before its photography exists rather than showing a broken image.
+
+   ARRIVAL
+
+   A photograph fades up from the placeholder tone once it has decoded (see
+   .pic in index.css) instead of popping in line by line. The class flips on
+   the image's load event; an image the browser already had cached fires that
+   event before React can listen, so the ref callback checks `complete` and
+   flips it straight away. A failed load flips it too, so the alt text is
+   never held invisible. Under reduced motion the fade is instant.
    =========================================================================== */
 
 /** A full URL, or any path that already names a file, is used verbatim. */
@@ -34,6 +45,12 @@ export default function Picture({
   className = '',
   ...rest
 }) {
+  const [loaded, setLoaded] = useState(false);
+  const done = useCallback(() => setLoaded(true), []);
+  const imgRef = useCallback((img) => {
+    if (img && img.complete && img.naturalWidth > 0) setLoaded(true);
+  }, []);
+
   if (!src) {
     return (
       <div
@@ -47,16 +64,21 @@ export default function Picture({
     );
   }
 
+  const cls = `pic ${loaded ? 'pic-loaded' : ''} ${className}`.trim();
+  const imgProps = {
+    ref: imgRef,
+    alt,
+    loading: eager ? 'eager' : 'lazy',
+    decoding: eager ? 'sync' : 'async',
+    onLoad: done,
+    onError: done,
+    ...(eager ? { fetchpriority: 'high' } : {}),
+  };
+
   if (isDirect(src)) {
     return (
-      <picture className={className} style={ratio ? { aspectRatio: ratio } : undefined} {...rest}>
-        <img
-          src={src}
-          alt={alt}
-          loading={eager ? 'eager' : 'lazy'}
-          decoding={eager ? 'sync' : 'async'}
-          {...(eager ? { fetchpriority: 'high' } : {})}
-        />
+      <picture className={cls} style={ratio ? { aspectRatio: ratio } : undefined} {...rest}>
+        <img src={src} {...imgProps} />
       </picture>
     );
   }
@@ -64,17 +86,11 @@ export default function Picture({
   const suffix = thumb ? '-thumb' : '';
 
   return (
-    <picture className={className} style={ratio ? { aspectRatio: ratio } : undefined} {...rest}>
+    <picture className={cls} style={ratio ? { aspectRatio: ratio } : undefined} {...rest}>
       {/* Thumbnails only ship a jpg — a second encode of a 640px file saves
           bytes that are not worth the extra build artefact. */}
       {!thumb && <source srcSet={`${src}.webp`} type="image/webp" />}
-      <img
-        src={`${src}${suffix}.jpg`}
-        alt={alt}
-        loading={eager ? 'eager' : 'lazy'}
-        decoding={eager ? 'sync' : 'async'}
-        {...(eager ? { fetchpriority: 'high' } : {})}
-      />
+      <img src={`${src}${suffix}.jpg`} {...imgProps} />
     </picture>
   );
 }
