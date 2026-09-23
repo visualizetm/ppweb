@@ -99,9 +99,6 @@ export default function Footer() {
           <p className="ft-copy">
             &copy; {year} {site.name}. Photography by {site.photographer}.
           </p>
-          <p className="ft-stamp" title="Deployed build">
-            {__BUILD_SHA__}
-          </p>
         </div>
       </footer>
 
@@ -190,21 +187,15 @@ export default function Footer() {
         .ft-bottom {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           gap: var(--space-4);
           padding-block: var(--space-5);
           border-top: 1px solid var(--border);
         }
 
-        .ft-copy, .ft-stamp {
+        .ft-copy {
           margin: 0;
           font-size: 0.78rem;
           color: var(--text-faint);
-        }
-
-        .ft-stamp {
-          font-variant-numeric: tabular-nums;
-          letter-spacing: 0.06em;
         }
 
         @media (max-width: 900px) {
@@ -214,7 +205,6 @@ export default function Footer() {
 
         @media (max-width: 600px) {
           .ft-inner { grid-template-columns: 1fr; }
-          .ft-bottom { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
         }
       `}</style>
     </>
